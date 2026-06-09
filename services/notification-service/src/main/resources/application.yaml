@@ -1,0 +1,50 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: notification-service
+
+  threads:
+    virtual:
+      enabled: true
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: notification-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "dev.mathalama.notificationservice.dto"
+        spring.json.type.mapping: "dev.mathalama.identityservice.application.dto.event.UserRegisteredEvent:dev.mathalama.notificationservice.dto.UserRegisteredEvent,dev.mathalama.identityservice.application.dto.event.VerificationEmailRequestedEvent:dev.mathalama.notificationservice.dto.VerificationEmailRequestedEvent,dev.mathalama.identityservice.application.dto.event.PasswordResetEmailRequestedEvent:dev.mathalama.notificationservice.dto.PasswordResetEmailRequestedEvent"
+
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: true
+
+app:
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+    zipkin:
+      tracing:
+        endpoint: "http://localhost:9411/api/v2/spans"

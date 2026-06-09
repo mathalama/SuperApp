@@ -1,0 +1,5 @@
+DROP INDEX IF EXISTS idx_users_email_verified;
+DROP INDEX IF EXISTS idx_users_username;
+DROP INDEX IF EXISTS idx_users_email;
+DROP INDEX IF EXISTS idx_users_account_state;
+DROP TABLE IF EXISTS users;

@@ -1,0 +1,83 @@
+# =========================================================================
+# Root .gitignore for SuperApp Monorepo
+# =========================================================================
+
+# --- Environment & Sensitive Files ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.env.*
+
+# --- IDEs and Editors ---
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+**/out/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# Eclipse
+.classpath
+.project
+.settings/
+.factorypath
+.springBeans
+
+# --- Build and Dependency Tools ---
+# Gradle
+.gradle/
+build/
+**/build/
+**/.gradle/
+
+# Gradle Wrapper (ensure it is NOT ignored if wrappers are kept in subfolders)
+!**/gradle/wrapper/gradle-wrapper.jar
+
+# Gradle/Java binaries and outputs
+bin/
+**/bin/
+
+# --- Compiled/Executable Java files ---
+*.class
+*.jar
+*.war
+*.ear
+!**/gradle/wrapper/gradle-wrapper.jar
+
+# --- Operating System Files ---
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# --- Logs & Temp ---
+*.log
+**/*.log
+.aider*

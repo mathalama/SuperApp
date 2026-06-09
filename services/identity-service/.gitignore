@@ -1,0 +1,54 @@
+HELP.md
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+### IDEs and Editors ###
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Eclipse / STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
+.vscode/
+
+# Build Outputs
+bin/
+
+### Local Configuration & Secrets ###
+.env
+.env.local
+.env.*
+*.log
+.aider*
+
+### Compiled Java Classes & Artifacts ###
+*.class
+*.jar
+!**/gradle/wrapper/gradle-wrapper.jar
+*.war
+*.ear
+
+### OS Files ###
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db

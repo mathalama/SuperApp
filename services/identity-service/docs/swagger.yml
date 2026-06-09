@@ -1,0 +1,1083 @@
+openapi: 3.0.3
+info:
+  title: Identity Service API
+  description: |
+    Authentication and authorization microservice with OAuth2 provider linking.
+    
+    Issues JWT access & refresh tokens (HMAC-SHA256) for stateless API authentication.
+    Supports OAuth2 Authorization Server (RSA-256), OAuth2 Login (Google, GitHub), and
+    unified account linking — allowing a single user account with multiple authentication methods.
+    
+    ## Authentication Flow
+    
+    1. Register via `POST /auth/register`
+    2. Verify email via `POST /auth/verify-email`
+    3. Authenticate via `POST /auth/authenticate` to get access + refresh tokens
+    4. Send access token in header: `Authorization: Bearer <accessToken>`
+    5. When access token expires, refresh via `POST /auth/refresh`
+    6. Logout via `POST /auth/logout` to revoke all tokens
+    
+    ## User Profile & OAuth Providers
+    
+    - Get profile: `GET /auth/me`
+    - List linked providers: `GET /auth/me/providers`
+    - Unlink provider: `DELETE /auth/me/providers/{provider}`
+    
+    ## Forgot Password Flow
+    
+    1. Request reset email via `POST /auth/forgot-password`
+    2. Set new password via `POST /auth/reset-forgotten-password`
+    
+    ## Token Validation (Service-to-Service)
+    
+    Other microservices can validate JWT tokens via `POST /auth/validate`
+    to verify tokens and retrieve user information without parsing JWT themselves.
+    
+    ## Token Lifecycle
+    
+    | Token | TTL | Storage | Revocation |
+    |-------|-----|---------|------------|
+    | Access | ~15 min (`JWT_EXPIRATION`) | Client only | Blacklisted in Redis on logout |
+    | Refresh | ~7 days (`JWT_REFRESH_EXPIRATION`) | Redis (`refresh:token:{userId}`) | Deleted on logout or rotation |
+  version: 1.0.0
+  contact:
+    name: Mathalama
+    url: https://mathalama.dev
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://identity.example.com
+    description: Production
+
+tags:
+  - name: Authentication
+    description: User registration, verification, login, token refresh, and logout
+  - name: User Profile
+    description: Current user profile and linked OAuth providers
+  - name: OAuth2
+    description: OAuth2 Authorization Server endpoints
+  - name: Service-to-Service
+    description: Inter-microservice token validation
+  - name: Health
+    description: Service health checks
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register new user
+      description: |
+        Creates user with `ROLE_USER` role and `PENDING_VERIFICATION` state.
+        Username and email must be unique.
+        
+        User receives verification email with token link.
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpRegister'
+            example:
+              username: john_doe
+              email: john@example.com
+              password: SecurePassword123!
+      responses:
+        "201":
+          description: User created successfully. Check email for verification link.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: User registered successfully. Please check your email to verify your account.
+        "409":
+          description: Username or email already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 409
+                error: Conflict
+                message: User already exists
+                path: /auth/register
+                timestamp: "2026-02-27T12:00:00Z"
+        "500":
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/verify-email:
+    post:
+      tags:
+        - Authentication
+      summary: Verify email address
+      description: |
+        Validates email verification token and activates user account.
+        
+        Token expires after 30 minutes and is one-time use only.
+      operationId: verifyEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequest'
+            example:
+              token: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        "200":
+          description: Email verified successfully. Account is now active.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResponse'
+              example:
+                message: Email verified successfully
+                verified: true
+        "400":
+          description: Invalid or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 400
+                error: Bad Request
+                message: Invalid or expired verification token
+                path: /auth/verify-email
+                timestamp: "2026-02-27T12:00:00Z"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/resend-verification:
+    post:
+      tags:
+        - Authentication
+      summary: Resend verification email
+      description: |
+        Sends new verification email to user.
+        
+        Rate limited to once per 60 seconds to prevent abuse.
+      operationId: resendVerification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendVerificationRequest'
+            example:
+              email: john@example.com
+      responses:
+        "200":
+          description: Verification email sent successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResponse'
+              example:
+                message: Verification email sent successfully
+                verified: false
+        "400":
+          description: Rate limit exceeded or account already verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 400
+                error: Bad Request
+                message: Verification email was recently sent. Please wait before requesting another.
+                path: /auth/resend-verification
+                timestamp: "2026-02-27T12:00:00Z"
+        "404":
+          description: User or email not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/authenticate:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate and get token pair
+      description: |
+        Authenticates user with username/email and password.
+        
+        Returns a **short-lived access token** and a **long-lived refresh token**.
+        
+        - **Access token** (`type: access`): contains user ID and roles. Send in `Authorization: Bearer` header for API requests.
+        - **Refresh token** (`type: refresh`): used only at `POST /auth/refresh` to obtain a new token pair.
+        
+        The refresh token `jti` is stored in Redis for validation and rotation.
+        
+        **Access token TTL:** `JWT_EXPIRATION` (milliseconds).  
+        **Refresh token TTL:** `JWT_REFRESH_EXPIRATION` (default 7 days).
+      operationId: authenticate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInRequest'
+            examples:
+              byUsername:
+                summary: Login with username
+                value:
+                  login: john_doe
+                  password: SecurePassword123!
+              byEmail:
+                summary: Login with email
+                value:
+                  login: john@example.com
+                  password: SecurePassword123!
+      responses:
+        "200":
+          description: Authentication successful. Returns access + refresh token pair.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              example:
+                accessToken: eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoiYWNjZXNzIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sInN1YiI6IjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCIsImlzcyI6IklkZW50aXR5IFNlcnZpY2UiLCJpYXQiOjE3NDAyNDAwMDAsImV4cCI6MTc0MDI0MDkwMH0.signature
+                refreshToken: eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoicmVmcmVzaCIsInN1YiI6IjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCIsImlzcyI6IklkZW50aXR5IFNlcnZpY2UiLCJpYXQiOjE3NDAyNDAwMDAsImV4cCI6MTc0MDg0NDgwMH0.signature
+        "401":
+          description: Invalid credentials or email not verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 401
+                error: Unauthorized
+                message: Invalid credentials
+                path: /auth/authenticate
+                timestamp: "2026-02-27T12:00:00Z"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh token pair
+      description: |
+        Exchanges a valid refresh token for a **new access + refresh token pair**.
+        
+        **Refresh Token Rotation:** the old refresh token is immediately revoked in Redis
+        and a new one is issued. This limits the window of a stolen refresh token.
+        
+        If the submitted refresh token has already been used (replay/reuse attack),
+        **all tokens for that user are revoked** and the request is rejected.
+        
+        This endpoint is **public** (no `Authorization` header needed) — the refresh token
+        in the request body is sufficient for authentication.
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+            example:
+              refreshToken: eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoicmVmcmVzaCIs...
+      responses:
+        "200":
+          description: New token pair issued. Old refresh token is revoked.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              example:
+                accessToken: eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoiYWNjZXNzIiw...
+                refreshToken: eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoicmVmcmVzaCIs...
+        "401":
+          description: Refresh token is invalid, expired, or has been revoked.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 401
+                error: Unauthorized
+                message: Refresh token has been revoked or is invalid
+                path: /auth/refresh
+                timestamp: "2026-02-27T12:00:00Z"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout and revoke tokens
+      description: |
+        Logs the user out by performing two actions:
+        
+        1. **Blacklists the current access token** in Redis (`blacklist:access:{jti}`)
+           with TTL equal to the token's remaining lifetime. Any subsequent request
+           with this access token will be rejected by `JwtAuthenticationFilter`.
+        
+        2. **Deletes the refresh token** from Redis (`refresh:token:{userId}`),
+           preventing future token refreshes.
+        
+        Requires a valid access token in the `Authorization` header.
+      operationId: logout
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: "Bearer access token. Example: `Bearer eyJhbGciOiJIUzI1NiJ9...`"
+      responses:
+        "204":
+          description: Successfully logged out. Access token blacklisted, refresh token revoked.
+        "401":
+          description: Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password (authenticated)
+      description: |
+        Changes the user's password. Requires the current (old) password for verification.
+        
+        Requires a valid access token in the `Authorization` header.
+      operationId: resetPassword
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+            example:
+              username: john_doe
+              oldPassword: OldPassword123!
+              newPassword: NewSecurePassword456!
+      responses:
+        "204":
+          description: Password changed successfully.
+        "400":
+          description: Invalid old password.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 400
+                error: Bad Request
+                message: Invalid old password
+                path: /auth/reset-password
+                timestamp: "2026-02-27T12:00:00Z"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Request password reset email
+      description: |
+        Sends a password-reset email containing a time-limited token.
+        
+        - The token is **SHA-256 hashed** and stored in Redis with a **30-minute TTL**.
+        - Rate-limited to **one request per 60 seconds** per user.
+        - Always returns `200 OK` regardless of whether the email exists (prevents enumeration).
+        
+        This endpoint is **public** — no `Authorization` header required.
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+            example:
+              email: john@example.com
+      responses:
+        "200":
+          description: Password reset email sent (if account exists).
+          content:
+            application/json:
+              example:
+                message: "If the email exists, a password reset link has been sent."
+        "400":
+          description: Rate limit exceeded (60 sec cooldown) or validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 400
+                error: Bad Request
+                message: Password reset email was recently sent. Please wait before requesting another.
+                path: /auth/forgot-password
+                timestamp: "2026-02-27T12:00:00Z"
+
+  /auth/reset-forgotten-password:
+    post:
+      tags:
+        - Authentication
+      summary: Set new password via reset token
+      description: |
+        Validates the password-reset token from the email link and sets a new password.
+        
+        - Token is one-time use and deleted after success.
+        - All refresh tokens for the user are revoked (forces re-login).
+        
+        This endpoint is **public** — no `Authorization` header required.
+      operationId: resetForgottenPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewPasswordRequest'
+            example:
+              token: 550e8400-e29b-41d4-a716-446655440000
+              newPassword: NewSecurePassword456!
+      responses:
+        "200":
+          description: Password reset successfully. User should log in with the new password.
+          content:
+            application/json:
+              example:
+                message: "Password has been reset successfully. Please log in with your new password."
+        "400":
+          description: Invalid or expired token, or validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 400
+                error: Bad Request
+                message: Invalid or expired password reset token
+                path: /auth/reset-forgotten-password
+                timestamp: "2026-02-27T12:00:00Z"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/me:
+    get:
+      tags:
+        - User Profile
+      summary: Get current user profile
+      description: |
+        Returns detailed information about the currently authenticated user,
+        including ID, username, email, verification status, account state, roles, and creation time.
+        
+        Requires a valid access token in the `Authorization` header.
+      operationId: getCurrentUser
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current user profile retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUserDto'
+              example:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                username: john_doe
+                email: john@example.com
+                emailVerified: true
+                accountState: ACTIVE
+                roles:
+                  - ROLE_USER
+                createdAt: 1740240000000
+        "401":
+          description: Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/me/providers:
+    get:
+      tags:
+        - User Profile
+      summary: Get linked OAuth providers
+      description: |
+        Returns a list of all OAuth providers linked to the current user account.
+        
+        Includes provider name, associated email, link timestamp, and last login time.
+        Useful for displaying "Connected Accounts" in user settings.
+        
+        Requires a valid access token in the `Authorization` header.
+      operationId: getLinkedProviders
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of linked OAuth providers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OAuthProviderDto'
+              example:
+                - id: 550e8400-e29b-41d4-a716-446655440001
+                  providerName: GOOGLE
+                  providerEmail: john@gmail.com
+                  linkedAt: 1740239000000
+                  lastLoginAt: 1740240000000
+                - id: 550e8400-e29b-41d4-a716-446655440002
+                  providerName: GITHUB
+                  providerEmail: john_dev
+                  linkedAt: 1740238000000
+                  lastLoginAt: 1740235000000
+        "401":
+          description: Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/me/providers/{provider}:
+    delete:
+      tags:
+        - User Profile
+      summary: Unlink OAuth provider
+      description: |
+        Removes a specific OAuth provider from the current user's account.
+        
+        A user must maintain at least one authentication method, so the system
+        prevents unlinking the last remaining provider to avoid account lockout.
+        
+        Requires a valid access token in the `Authorization` header.
+      operationId: unlinkProvider
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+          description: OAuth provider name to unlink (GOOGLE, GITHUB, etc.)
+          example: GOOGLE
+      responses:
+        "204":
+          description: OAuth provider unlinked successfully.
+        "400":
+          description: Cannot unlink the last remaining authentication method.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 400
+                error: Bad Request
+                message: Cannot unlink your last authentication method
+                path: /auth/me/providers/GOOGLE
+                timestamp: "2026-02-27T12:00:00Z"
+        "401":
+          description: Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: Provider is not linked to this account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/validate:
+    post:
+      tags:
+        - Service-to-Service
+      summary: Validate JWT token (inter-service endpoint)
+      description: |
+        Validates a JWT access token and returns the associated user information.
+        
+        This is a service-to-service endpoint used by other microservices (Account Service,
+        Transfer Service, etc.) to verify tokens and retrieve user details for authorization
+        decisions without duplicating JWT parsing logic.
+        
+        Handles token format variations (with or without "Bearer " prefix).
+        Always returns HTTP 200 OK with a success/failure flag in the response body.
+        
+        This endpoint is **public** — useful for inter-service communication.
+      operationId: validateToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenValidationRequest'
+            example:
+              token: eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoiYWNjZXNzIiw...
+      responses:
+        "200":
+          description: Token validation result (check 'valid' flag in response).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenValidationResponse'
+              examples:
+                success:
+                  summary: Valid token
+                  value:
+                    valid: true
+                    userId: 550e8400-e29b-41d4-a716-446655440000
+                    username: john_doe
+                    email: john@example.com
+                    roles:
+                      - ROLE_USER
+                    message: "Token is valid"
+                failure:
+                  summary: Invalid token
+                  value:
+                    valid: false
+                    userId: null
+                    username: null
+                    email: null
+                    roles: []
+                    message: "Invalid or expired token"
+
+  /actuator/health:
+    get:
+      tags:
+        - Health
+      summary: Service health check
+      description: Returns service status and dependencies health.
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Service is running.
+          content:
+            application/json:
+              example:
+                status: UP
+                components:
+                  db:
+                    status: UP
+                  redis:
+                    status: UP
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT **access token** obtained from `POST /auth/authenticate` or `POST /auth/refresh`.
+        
+        Send in header: `Authorization: Bearer <accessToken>`
+        
+        The access token contains `"type": "access"` — refresh tokens are rejected by API endpoints.
+
+  schemas:
+    SignUpRegister:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: "^[a-zA-Z0-9_]+$"
+          description: "Unique username (letters, digits, underscores only)"
+          example: john_doe
+        email:
+          type: string
+          format: email
+          description: Unique email address
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+          description: Password (8-128 characters)
+          example: SecurePassword123!
+
+    SignInRequest:
+      type: object
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+          description: Username or email
+          example: john_doe
+        password:
+          type: string
+          format: password
+          example: SecurePassword123!
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: Refresh token from the last authentication or refresh response
+          example: eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoicmVmcmVzaCIs...
+
+    VerifyEmailRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          format: uuid
+          description: Email verification token from email link
+          example: 550e8400-e29b-41d4-a716-446655440000
+
+    ResendVerificationRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address to send verification to
+          example: john@example.com
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - username
+        - oldPassword
+        - newPassword
+      properties:
+        username:
+          type: string
+          description: Username of the account
+          example: john_doe
+        oldPassword:
+          type: string
+          format: password
+          description: Current password
+          example: OldPassword123!
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+          description: New password (8-128 characters)
+          example: NewSecurePassword456!
+
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address of the account to reset
+          example: john@example.com
+
+    NewPasswordRequest:
+      type: object
+      required:
+        - token
+        - newPassword
+      properties:
+        token:
+          type: string
+          description: Password reset token from email link
+          example: 550e8400-e29b-41d4-a716-446655440000
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+          description: New password (8-128 characters)
+          example: NewSecurePassword456!
+
+    AuthResponse:
+      type: object
+      description: Token pair returned on successful authentication or refresh.
+      properties:
+        accessToken:
+          type: string
+          description: |
+            Short-lived JWT access token (`type: access`). Contains user ID (`sub`) and roles.
+            Send in `Authorization: Bearer <accessToken>` for API requests.
+          example: eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoiYWNjZXNzIiw...
+        refreshToken:
+          type: string
+          description: |
+            Long-lived JWT refresh token (`type: refresh`). Use at `POST /auth/refresh`
+            to obtain a new token pair. Do NOT send as Bearer token to API endpoints.
+          example: eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoicmVmcmVzaCIs...
+
+    VerificationResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Email verified successfully
+        verified:
+          type: boolean
+          example: true
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: User registered successfully
+
+    CurrentUserDto:
+      type: object
+      description: Current authenticated user's profile information.
+      required:
+        - id
+        - username
+        - email
+        - emailVerified
+        - accountState
+        - roles
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User's unique identifier
+          example: 550e8400-e29b-41d4-a716-446655440000
+        username:
+          type: string
+          description: User's login username
+          example: john_doe
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: john@example.com
+        emailVerified:
+          type: boolean
+          description: Whether the email has been verified
+          example: true
+        accountState:
+          type: string
+          description: Current account state
+          enum:
+            - PENDING_VERIFICATION
+            - ACTIVE
+            - SUSPENDED
+            - LOCKED
+            - DELETED
+          example: ACTIVE
+        roles:
+          type: array
+          items:
+            type: string
+          description: Set of role names assigned to the user
+          example:
+            - ROLE_USER
+        createdAt:
+          type: integer
+          format: int64
+          description: Account creation timestamp in milliseconds since epoch
+          example: 1740240000000
+
+    OAuthProviderDto:
+      type: object
+      description: An OAuth provider linked to a user account.
+      required:
+        - id
+        - providerName
+        - providerEmail
+        - linkedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of this provider link
+          example: 550e8400-e29b-41d4-a716-446655440001
+        providerName:
+          type: string
+          description: OAuth provider name (GOOGLE, GITHUB, etc.)
+          example: GOOGLE
+        providerEmail:
+          type: string
+          format: email
+          description: Email address associated with this provider
+          example: john@gmail.com
+        linkedAt:
+          type: integer
+          format: int64
+          description: Timestamp when provider was linked (milliseconds since epoch)
+          example: 1740239000000
+        lastLoginAt:
+          type: integer
+          format: int64
+          nullable: true
+          description: Timestamp of last login via this provider (null if never used to login)
+          example: 1740240000000
+
+    TokenValidationRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          description: JWT access token to validate (with or without "Bearer " prefix)
+          example: eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoiYWNjZXNzIiw...
+
+    TokenValidationResponse:
+      type: object
+      description: Result of JWT token validation for inter-service communication.
+      required:
+        - valid
+        - userId
+        - username
+        - email
+        - roles
+        - message
+      properties:
+        valid:
+          type: boolean
+          description: Whether the token is valid and user exists
+          example: true
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+          description: User's unique identifier (null if validation failed)
+          example: 550e8400-e29b-41d4-a716-446655440000
+        username:
+          type: string
+          nullable: true
+          description: User's username (null if validation failed)
+          example: john_doe
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: User's email address (null if validation failed)
+          example: john@example.com
+        roles:
+          type: array
+          items:
+            type: string
+          description: User's role names (empty if validation failed)
+          example:
+            - ROLE_USER
+        message:
+          type: string
+          description: Descriptive message about validation result
+          example: "Token is valid"
+
+    UserResponse:
+      type: object
+      description: User profile (returned from protected endpoints).
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        username:
+          type: string
+          example: john_doe
+        accountState:
+          type: string
+          enum:
+            - PENDING_VERIFICATION
+            - ACTIVE
+            - DISABLED
+            - DELETED
+          example: ACTIVE
+        emailVerified:
+          type: boolean
+          example: true
+        securityStatus:
+          type: string
+          enum:
+            - PENDING
+            - VERIFIED
+            - MFA_REQUIRED
+            - MFA_VERIFIED
+          example: VERIFIED
+        roles:
+          type: array
+          items:
+            type: string
+          example:
+            - ROLE_USER
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-02-27T12:00:00Z"
+
+    ErrorResponse:
+      type: object
+      description: Standard error envelope returned on 4xx/5xx responses.
+      properties:
+        status:
+          type: integer
+          example: 401
+        error:
+          type: string
+          example: Unauthorized
+        message:
+          type: string
+          example: Invalid credentials
+        path:
+          type: string
+          example: /auth/authenticate
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-02-27T12:00:00Z"
+
+security:
+  - BearerAuth: []
