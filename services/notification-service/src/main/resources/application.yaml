@@ -15,10 +15,7 @@ spring:
       group-id: notification-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "dev.mathalama.notificationservice.dto"
-        spring.json.type.mapping: "dev.mathalama.identityservice.application.dto.event.UserRegisteredEvent:dev.mathalama.notificationservice.dto.UserRegisteredEvent,dev.mathalama.identityservice.application.dto.event.VerificationEmailRequestedEvent:dev.mathalama.notificationservice.dto.VerificationEmailRequestedEvent,dev.mathalama.identityservice.application.dto.event.PasswordResetEmailRequestedEvent:dev.mathalama.notificationservice.dto.PasswordResetEmailRequestedEvent"
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
   mail:
     host: ${MAIL_HOST}

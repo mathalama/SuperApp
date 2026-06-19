@@ -1,6 +1,6 @@
 services:
   identity-service:
-    build: .
+    build: ./services/identity-service
     container_name: identity-service
     ports:
       - "8080:8080"
@@ -39,7 +39,7 @@ services:
     build: ./services/notification-service
     container_name: notification-service
     ports:
-      - "8082:8082"
+      - "8082:8081"
     environment:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_MAIL_HOST=${MAIL_HOST}
@@ -57,7 +57,7 @@ services:
 
   migrate-identity:
     build:
-      context: .
+      context: ./services/identity-service
       dockerfile: Dockerfile.flyway
     container_name: migrate-identity
     env_file:

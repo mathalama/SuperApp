@@ -8,6 +8,9 @@ import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
+import org.springframework.kafka.support.converter.JsonMessageConverter;
+import org.springframework.kafka.support.converter.RecordMessageConverter;
+
 
 @Slf4j
 @Configuration
@@ -20,5 +23,8 @@ public class KafkaConfig {
         return new DefaultErrorHandler(recoverer, new FixedBackOff(2000L, 3));
     }
 
-
+    @Bean
+    public RecordMessageConverter messageConverter() {
+        return new JsonMessageConverter();
+    }
 }

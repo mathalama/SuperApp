@@ -1,6 +1,9 @@
 package dev.mathalama.identityservice.infrastructure.messaging;
 
 import dev.mathalama.identityservice.application.dto.event.EventType;
+import dev.mathalama.identityservice.application.dto.event.UserRegisteredEvent;
+import dev.mathalama.identityservice.application.dto.event.VerificationEmailRequestedEvent;
+import dev.mathalama.identityservice.application.dto.event.PasswordResetEmailRequestedEvent;
 import dev.mathalama.identityservice.infrastructure.persistence.outbox.OutboxEvent;
 import dev.mathalama.identityservice.infrastructure.persistence.outbox.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +12,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
@@ -23,7 +25,8 @@ public class OutboxProcessor {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processEvent(OutboxEvent event) {
         try {
-            JsonNode payload = objectMapper.readTree(event.getPayload());
+            Class<?> eventClass = getEventClass(event.getEventType());
+            Object payload = objectMapper.readValue(event.getPayload(), eventClass);
             String topic = EventType.valueOf(event.getEventType()).getTopic();
 
             kafkaTemplate.send(topic, event.getAggregateId(), payload).get();
@@ -33,5 +36,14 @@ public class OutboxProcessor {
         } catch (Exception e) {
             throw new RuntimeException("Failed to process event " + event.getId(), e);
         }
+    }
+
+    private Class<?> getEventClass(String eventType) {
+        return switch (eventType) {
+            case "USER_REGISTERED" -> UserRegisteredEvent.class;
+            case "VERIFICATION_EMAIL_REQUESTED" -> VerificationEmailRequestedEvent.class;
+            case "PASSWORD_RESET_EMAIL_REQUESTED" -> PasswordResetEmailRequestedEvent.class;
+            default -> Object.class;
+        };
     }
 }
