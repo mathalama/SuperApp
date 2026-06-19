@@ -1,9 +1,29 @@
 services:
+  api-gateway:
+    build: ./services/api-gateway
+    container_name: api-gateway
+    ports:
+      - "8010:8010"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL}
+    env_file:
+      - .env
+    depends_on:
+      identity-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8010/actuator/health | grep UP || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - super-app-network
+
   identity-service:
     build: ./services/identity-service
     container_name: identity-service
-    ports:
-      - "8080:8080"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
@@ -35,11 +55,35 @@ services:
     networks:
       - super-app-network
   
+  user-service:
+    build: ./services/user-service
+    container_name: user-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${USER_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      migrate-user:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health | grep UP || exit 1"]
+      interval: 1m
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - super-app-network
+
   notification-service:
     build: ./services/notification-service
     container_name: notification-service
-    ports:
-      - "8082:8081"
     environment:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_MAIL_HOST=${MAIL_HOST}
@@ -69,6 +113,20 @@ services:
     networks:
       - super-app-network
 
+  migrate-user:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile.flyway
+    container_name: migrate-user
+    env_file:
+      - .env
+    command: -url=jdbc:postgresql://postgres:5432/${USER_DB} -user=${POSTGRES_USER} -password=${POSTGRES_PASSWORD} migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - super-app-network
+
   postgres:
     image: postgres:15-alpine
     container_name: postgres
@@ -80,6 +138,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
     networks:
       - super-app-network
     healthcheck:

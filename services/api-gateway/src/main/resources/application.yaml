@@ -1,0 +1,81 @@
+server:
+  port: 8010
+  shutdown: graceful
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      routes:
+        # Identity Service
+        - id: identity-service
+          uri: http://identity-service:8080
+          predicates:
+            - Path=/auth/**
+
+        # Identity Service — OAuth2 flows
+        - id: identity-oauth
+          uri: http://identity-service:8080
+          predicates:
+            - Path=/oauth2/**,/login/oauth2/**,.well-known/**
+
+        # User Service
+        - id: user-service
+          uri: http://user-service:8083
+          predicates:
+            - Path=/api/users/**
+
+        # Notification Service
+        - id: notification-service
+          uri: http://notification-service:8081
+          predicates:
+            - Path=/api/notifications/**
+
+        # Swagger docs per service
+        - id: identity-docs
+          uri: http://identity-service:8080
+          predicates:
+            - Path=/identity/v3/api-docs/**
+          filters:
+            - StripPrefix=1
+
+        - id: user-docs
+          uri: http://user-service:8083
+          predicates:
+            - Path=/user/v3/api-docs/**
+          filters:
+            - StripPrefix=1
+
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+  threads:
+    virtual:
+      enabled: true
+
+jwt:
+  secret: ${JWT_SECRET}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true
+
+logging:
+  level:
+    root: INFO
+    dev.mathalama.apigateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
