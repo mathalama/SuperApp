@@ -1,16 +1,16 @@
-# syntax=docker/dockerfile:1
-FROM gradle:8.14 AS builder
+FROM gradle:8-jdk21-alpine AS build
 WORKDIR /app
 COPY . .
-
-RUN --mount=type=cache,target=/home/gradle/.gradle/caches \
-    --mount=type=cache,target=/home/gradle/.gradle/wrapper \
-    gradle clean build -x test --no-daemon
+RUN gradle clean build -x test
 
 FROM eclipse-temurin:21-jre-alpine
+
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-USER appuser
 WORKDIR /app
-COPY --from=builder /app/build/libs/*.jar app.jar
+
+COPY --from=build /app/build/libs/*-SNAPSHOT.jar app.jar
+
+USER appuser
 EXPOSE 8010
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
