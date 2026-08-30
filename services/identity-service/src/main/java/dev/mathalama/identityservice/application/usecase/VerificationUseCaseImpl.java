@@ -13,12 +13,12 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import dev.mathalama.identityservice.domain.exception.InvalidAccountStateException;
+import dev.mathalama.identityservice.domain.exception.VerificationEmailRateLimitException;
 
 import java.util.Date;
 import java.util.UUID;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Slf4j
 @Service
@@ -56,11 +56,11 @@ public class VerificationUseCaseImpl implements VerificationUseCase {
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if (user.getAccountState() != AccountState.PENDING_VERIFICATION) {
-            throw new ResponseStatusException(BAD_REQUEST, "User email is already verified or account is not pending");
+            throw new InvalidAccountStateException("User email is already verified or account is not pending");
         }
 
         if (!verificationTokenStore.canResendToken(user)) {
-            throw new ResponseStatusException(BAD_REQUEST, "Verification email was recently sent. Please wait before requesting another.");
+            throw new VerificationEmailRateLimitException("Verification email was recently sent. Please wait before requesting another.");
         }
 
         String verificationToken = verificationTokenStore.generateVerificationToken(user);

@@ -18,87 +18,87 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final OAuth2SuccessHandler oauth2SuccessHandler;
-    private final OAuth2FailureHandler oauth2FailureHandler;
+        private final JwtAuthenticationFilter jwtAuthenticationFilter;
+        private final OAuth2SuccessHandler oauth2SuccessHandler;
+        private final OAuth2FailureHandler oauth2FailureHandler;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                         OAuth2SuccessHandler oauth2SuccessHandler,
-                         OAuth2FailureHandler oauth2FailureHandler) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.oauth2SuccessHandler = oauth2SuccessHandler;
-        this.oauth2FailureHandler = oauth2FailureHandler;
-    }
+        public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                        OAuth2SuccessHandler oauth2SuccessHandler,
+                        OAuth2FailureHandler oauth2FailureHandler) {
+                this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+                this.oauth2SuccessHandler = oauth2SuccessHandler;
+                this.oauth2FailureHandler = oauth2FailureHandler;
+        }
 
-    @Bean
-    @Order(1)
-    public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .securityMatcher(
-                        "/auth/**",
-                        "/api/**",
-                        "/actuator/**",
-                        "/v3/api-docs/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html"
-                )
-                .cors(Customizer.withDefaults())
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(
-                                "/auth/register",
-                                "/auth/authenticate",
-                                "/auth/refresh",
-                                "/auth/verify-email",
-                                "/auth/resend-verification",
-                                "/auth/forgot-password",
-                                "/auth/reset-password",
-                                "/auth/oauth-exchange"
-                        ).permitAll()
-                        .requestMatchers(
-                                "/actuator/health"
-                        ).permitAll()
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
-                        .requestMatchers(
-                                "/auth/logout"
-                        ).authenticated()
-                        .requestMatchers(
-                                "/api/**"
-                        ).authenticated()
-                        .anyRequest().denyAll()
-                )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        @Bean
+        @Order(1)
+        public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .securityMatcher(
+                                                "/auth/**",
+                                                "/api/**",
+                                                "/actuator/**",
+                                                "/v3/api-docs/**",
+                                                "/swagger-ui/**",
+                                                "/swagger-ui.html")
+                                .cors(Customizer.withDefaults())
+                                .csrf(AbstractHttpConfigurer::disable)
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authorizeHttpRequests(authorize -> authorize
+                                                .requestMatchers(
+                                                                "/auth/register",
+                                                                "/auth/authenticate",
+                                                                "/auth/refresh",
+                                                                "/auth/verify-email",
+                                                                "/auth/resend-verification",
+                                                                "/auth/forgot-password",
+                                                                "/auth/reset-password",
+                                                                "/auth/oauth-exchange")
+                                                .permitAll()
+                                                .requestMatchers(
+                                                                "/actuator/health")
+                                                .permitAll()
+                                                .requestMatchers(
+                                                                "/v3/api-docs/**",
+                                                                "/swagger-ui/**",
+                                                                "/swagger-ui.html")
+                                                .permitAll()
+                                                .requestMatchers(
+                                                                "/auth/logout",
+                                                                "/auth/sessions",
+                                                                "/auth/sessions/**")
+                                                .authenticated()
 
-        return http.build();
-    }
+                                                .requestMatchers(
+                                                                "/api/**")
+                                                .authenticated()
+                                                .anyRequest().denyAll())
+                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-    @Bean
-    @Order(2)
-    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(
-                                "/login",
-                                "/login/oauth2/code/**"
-                        ).permitAll()
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**"
-                        ).permitAll()
-                        .anyRequest().authenticated()
-                )
-                .oauth2Login(oauth2 -> oauth2
-                        .successHandler(oauth2SuccessHandler)
-                        .failureHandler(oauth2FailureHandler)
-                )
-                .formLogin(Customizer.withDefaults());
+                return http.build();
+        }
 
-        return http.build();
-    }
+        @Bean
+        @Order(2)
+        public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .authorizeHttpRequests(authorize -> authorize
+                                                .requestMatchers(
+                                                                "/login",
+                                                                "/login/oauth2/code/**")
+                                                .permitAll()
+                                                .requestMatchers(
+                                                                "/swagger-ui/**",
+                                                                "/swagger-ui.html",
+                                                                "/v3/api-docs/**")
+                                                .permitAll()
+                                                .anyRequest().authenticated())
+                                .oauth2Login(oauth2 -> oauth2
+                                                .successHandler(oauth2SuccessHandler)
+                                                .failureHandler(oauth2FailureHandler))
+                                .formLogin(Customizer.withDefaults());
+
+                return http.build();
+        }
 }

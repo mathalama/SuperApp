@@ -1,6 +1,7 @@
 package dev.mathalama.identityservice.application.usecase;
 
 import dev.mathalama.identityservice.application.dto.response.AuthResponse;
+import dev.mathalama.identityservice.application.mapper.UserMapper;
 import dev.mathalama.identityservice.domain.exception.UnauthorizedException;
 import dev.mathalama.identityservice.domain.model.User;
 import dev.mathalama.identityservice.domain.port.in.OAuthExchangeUseCase;
@@ -48,7 +49,7 @@ public class OAuthExchangeUseCaseImpl implements OAuthExchangeUseCase {
         String accessToken = tokenStore.generateAccessToken(user);
         String refreshToken = tokenStore.generateRefreshToken(user);
 
-        return new AuthResponse(accessToken, refreshToken);
+        return new AuthResponse(accessToken, refreshToken, UserMapper.toCurrentUserResponse(user));
     }
 
 

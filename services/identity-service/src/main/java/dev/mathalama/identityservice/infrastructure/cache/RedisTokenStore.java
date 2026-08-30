@@ -31,12 +31,14 @@ public class RedisTokenStore implements TokenStore {
 
     private static final String REFRESH_TOKEN_PREFIX = "refresh:token:";
     private static final String BLACKLIST_PREFIX = "blacklist:access:";
+    private static final String SESSION_PREFIX = "session:";
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     public RedisTokenStore(@Value("${jwt.secret}") String secret,
-                          @Value("${jwt.expiration}") long accessExpiration,
-                          @Value("${jwt.refresh-expiration}") long refreshExpiration,
-                          RedisTemplate<String, String> redisTemplate,
-                           UserRepository userRepository) {
+            @Value("${jwt.expiration}") long accessExpiration,
+            @Value("${jwt.refresh-expiration}") long refreshExpiration,
+            RedisTemplate<String, String> redisTemplate,
+            UserRepository userRepository) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
         this.accessTokenExpiration = accessExpiration;
         this.refreshTokenExpiration = refreshExpiration;
@@ -46,16 +48,24 @@ public class RedisTokenStore implements TokenStore {
 
     @Override
     public String generateAccessToken(User user) {
+        return generateAccessToken(user, null);
+    }
+
+    @Override
+    public String generateAccessToken(User user, String sessionId) {
         Map<String, Object> claims = new HashMap<>();
 
         List<String> rolesList = user.getRoles() != null && !user.getRoles().isEmpty()
                 ? user.getRoles().stream()
-                    .map(role -> role.getName())
-                    .toList()
+                        .map(role -> role.getName())
+                        .toList()
                 : List.of("ROLE_USER");
 
         claims.put("roles", rolesList);
         claims.put("type", "access");
+        if (sessionId != null) {
+            claims.put("sid", sessionId);
+        }
 
         return Jwts.builder()
                 .claims(claims)
@@ -199,7 +209,7 @@ public class RedisTokenStore implements TokenStore {
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
-            
+
             String subject = claims.getSubject();
             if (subject == null || subject.isEmpty()) {
                 log.warn("Token subject is empty");
@@ -268,7 +278,7 @@ public class RedisTokenStore implements TokenStore {
             }
 
             User user = userRepository.findById(UUID.fromString(userId)).orElse(null);
-            
+
             if (user == null) {
                 log.warn("User not found for ID: {}", userId);
                 return null;
@@ -295,6 +305,91 @@ public class RedisTokenStore implements TokenStore {
         } catch (Exception e) {
             log.warn("Cannot extract roles from token: {}", e.getMessage());
             return List.of();
+        }
+    }
+
+    @Override
+    public void storeSession(dev.mathalama.identityservice.domain.model.UserSession session) {
+        String sessionKey = SESSION_PREFIX + session.getUserId() + ":" + session.getSessionId();
+        String userSetKey = "user:tokens:" + session.getUserId();
+        try {
+            String json = objectMapper.writeValueAsString(session);
+            redisTemplate.opsForValue().set(sessionKey, json, refreshTokenExpiration, TimeUnit.MILLISECONDS);
+            redisTemplate.opsForSet().add(userSetKey, session.getSessionId());
+            redisTemplate.expire(userSetKey, refreshTokenExpiration, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            log.error("Failed to serialize session", e);
+        }
+    }
+
+    @Override
+    public List<dev.mathalama.identityservice.domain.model.UserSession> getUserSessions(String userId) {
+        String userSetKey = "user:tokens:" + userId;
+        Set<String> sessionIds = redisTemplate.opsForSet().members(userSetKey);
+        if (sessionIds == null || sessionIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<dev.mathalama.identityservice.domain.model.UserSession> sessions = new ArrayList<>();
+        List<String> deadSessionIds = new ArrayList<>();
+        for (String sessionId : sessionIds) {
+            String sessionKey = SESSION_PREFIX + userId + ":" + sessionId;
+            String json = redisTemplate.opsForValue().get(sessionKey);
+            if (json != null) {
+                try {
+                    sessions.add(
+                            objectMapper.readValue(json, dev.mathalama.identityservice.domain.model.UserSession.class));
+                } catch (Exception e) {
+                    log.warn("Failed to parse session json for sessionId={}", sessionId);
+                }
+            } else {
+                deadSessionIds.add(sessionId);
+            }
+        }
+        // Чистим старые ID сессий, у которых истек TTL в Redis
+        if (!deadSessionIds.isEmpty()) {
+            deadSessionIds.forEach(id -> redisTemplate.opsForSet().remove(userSetKey, id));
+        }
+        // Сортируем: свежие сессии сверху
+        sessions.sort((a, b) -> Long.compare(b.getLastActiveAt(), a.getLastActiveAt()));
+        return sessions;
+    }
+
+    @Override
+    public void revokeSession(String userId, String sessionId) {
+        String sessionKey = SESSION_PREFIX + userId + ":" + sessionId;
+        String tokenKey = REFRESH_TOKEN_PREFIX + userId + ":" + sessionId;
+        String userSetKey = "user:tokens:" + userId;
+        redisTemplate.delete(sessionKey);
+        redisTemplate.delete(tokenKey);
+        redisTemplate.opsForSet().remove(userSetKey, sessionId);
+        log.info("Revoked session {} for userId {}", sessionId, userId);
+    }
+
+    @Override
+    public void revokeOtherSessions(String userId, String currentSessionId) {
+        String userSetKey = "user:tokens:" + userId;
+        Set<String> sessionIds = redisTemplate.opsForSet().members(userSetKey);
+        if (sessionIds != null && !sessionIds.isEmpty()) {
+            for (String sessionId : sessionIds) {
+                if (!sessionId.equals(currentSessionId)) {
+                    revokeSession(userId, sessionId);
+                }
+            }
+        }
+        log.info("Revoked all other sessions for userId {}, kept {}", userId, currentSessionId);
+    }
+
+    @Override
+    public String getSessionId(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            return claims.get("sid", String.class);
+        } catch (Exception e) {
+            return null;
         }
     }
 }

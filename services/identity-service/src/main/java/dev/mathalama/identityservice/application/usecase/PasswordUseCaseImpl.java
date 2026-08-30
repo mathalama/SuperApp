@@ -14,12 +14,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import dev.mathalama.identityservice.domain.exception.InvalidAccountStateException;
+import dev.mathalama.identityservice.domain.exception.InvalidPasswordException;
 
 import java.util.Date;
 import java.util.UUID;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Slf4j
 @Service
@@ -38,7 +38,7 @@ public class PasswordUseCaseImpl implements PasswordUseCase {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new ResponseStatusException(BAD_REQUEST, "Invalid old password");
+            throw new InvalidPasswordException("Invalid old password");
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
@@ -53,7 +53,7 @@ public class PasswordUseCaseImpl implements PasswordUseCase {
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if (user.getAccountState() != AccountState.ACTIVE) {
-            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Account is inactive");
+            throw new InvalidAccountStateException("Account is inactive");
         }
 
         if (!passwordResetTokenStore.canResendToken(user)) {

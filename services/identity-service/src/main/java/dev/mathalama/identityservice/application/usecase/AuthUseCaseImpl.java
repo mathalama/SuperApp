@@ -21,13 +21,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
-
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @Slf4j
 @Service
@@ -61,7 +58,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
         String encodePassword = passwordEncoder.encode(password);
         
         Role userRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new ResponseStatusException(INTERNAL_SERVER_ERROR, "Default role not found"));
+                .orElseThrow(() -> new IllegalStateException("Default role not found"));
         
         try {
             User user = User.builder()

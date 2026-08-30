@@ -4,8 +4,8 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
+      host: redis
+      port: 6379
       password: ${REDIS_PASSWORD}
       timeout: 2000
       jedis:
@@ -14,6 +14,7 @@ spring:
           max-idle: 8
           min-idle: 0
           max-wait: -1ms
+
   mail:
     host: ${MAIL_HOST}
     port: ${MAIL_PORT}
@@ -21,10 +22,11 @@ spring:
     password: ${MAIL_PASSWORD}
     properties:
       mail.smtp.auth: true
-      mail.smtp.ssl.enable: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
 
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:29092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -51,7 +53,6 @@ spring:
               - profile
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
 
-
   jpa:
     hibernate:
       ddl-auto: validate
@@ -62,7 +63,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   datasource:
-    url: jdbc:postgresql://localhost:${POSTGRES_PORT}/${POSTGRES_DB}
+    url: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
 
@@ -70,6 +71,7 @@ spring:
     enabled: false
     locations: classpath:db/migration
     baseline-on-migrate: true
+
   lifecycle:
     timeout-per-shutdown-phase: 20s
 
@@ -122,4 +124,3 @@ logging:
     org.springframework.security.oauth2: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [trace=%X{traceId},span=%X{spanId}] %-5level %logger{36} - %msg%n"
-

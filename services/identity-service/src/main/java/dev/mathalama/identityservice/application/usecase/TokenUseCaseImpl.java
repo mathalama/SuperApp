@@ -2,6 +2,7 @@ package dev.mathalama.identityservice.application.usecase;
 
 import dev.mathalama.identityservice.application.dto.response.AuthResponse;
 import dev.mathalama.identityservice.application.dto.response.TokenValidationResponse;
+import dev.mathalama.identityservice.application.mapper.UserMapper;
 import dev.mathalama.identityservice.domain.exception.UnauthorizedException;
 import dev.mathalama.identityservice.domain.exception.UserNotFoundException;
 import dev.mathalama.identityservice.domain.model.User;
@@ -42,11 +43,12 @@ public class TokenUseCaseImpl implements TokenUseCase {
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         tokenStore.revokeRefreshToken(userId, tokenId);
-        String newAccessToken = tokenStore.generateAccessToken(user);
         String newRefreshToken = tokenStore.generateRefreshToken(user);
+        String newSessionId = tokenStore.getTokenId(newRefreshToken);
+        String newAccessToken = tokenStore.generateAccessToken(user, newSessionId);
 
         log.info("Tokens refreshed for user: {}", user.getUsername());
-        return new AuthResponse(newAccessToken, newRefreshToken);
+        return new AuthResponse(newAccessToken, newRefreshToken, UserMapper.toCurrentUserResponse(user));
     }
 
     @Override

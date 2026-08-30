@@ -11,6 +11,6 @@ WORKDIR /app
 COPY --from=build /app/build/libs/*-SNAPSHOT.jar app.jar
 
 USER appuser
-EXPOSE <PORT>
+EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

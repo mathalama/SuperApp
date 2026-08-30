@@ -13,6 +13,11 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import dev.mathalama.identityservice.domain.exception.InvalidAccountStateException;
+import dev.mathalama.identityservice.domain.exception.VerificationEmailRateLimitException;
+import dev.mathalama.identityservice.domain.exception.InvalidPasswordException;
 
 import java.time.Instant;
 import java.util.Map;
@@ -84,11 +89,71 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(
+            ResponseStatusException ex,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                ex.getReason(),
+                request.getRequestURI()
+        );
+
+        return new ResponseEntity<>(errorResponse, status);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllUncaughtException(Exception ex, HttpServletRequest request) {
         log.error("Unknown error occurred", ex);
         return buildErrorResponse(ex, HttpStatus.INTERNAL_SERVER_ERROR, request);
     }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException (
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Malformed request body for path {}: {}", request.getRequestURI(), ex.getMessage());
+
+        return buildErrorResponse(
+                new Exception("Malformed JSON request body"),
+                HttpStatus.BAD_REQUEST,
+                request
+        );
+    }
+
+    @ExceptionHandler(InvalidAccountStateException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidAccountStateException(
+            InvalidAccountStateException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Invalid account state: {}", ex.getMessage());
+        return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, request); // 400
+    }
+
+    @ExceptionHandler(VerificationEmailRateLimitException.class)
+    public ResponseEntity<ErrorResponse> handleVerificationEmailRateLimitException(
+            VerificationEmailRateLimitException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Verification email rate limit exceeded: {}", ex.getMessage());
+        return buildErrorResponse(ex, HttpStatus.TOO_MANY_REQUESTS, request); // 429
+    }
+
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidPasswordException(
+            InvalidPasswordException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Invalid password attempt: {}", ex.getMessage());
+        return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, request); // 400
+    }
+
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(Exception ex, HttpStatus status, HttpServletRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
