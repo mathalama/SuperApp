@@ -13,4 +13,9 @@ public interface UserProfileUseCase {
     Optional<UserProfile> getProfile(UUID userId);
 
     UserProfile updateProfile(UUID userId, UpdateProfileRequest request);
+
+    UserProfile uploadAvatar(UUID userId, org.springframework.web.multipart.MultipartFile file);
+
+    UserProfile deleteAvatar(UUID userId);
+
 }

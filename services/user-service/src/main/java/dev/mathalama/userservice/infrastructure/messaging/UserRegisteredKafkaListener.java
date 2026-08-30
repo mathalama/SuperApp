@@ -16,7 +16,8 @@ public class UserRegisteredKafkaListener {
 
     private final UserProfileUseCase userProfileUseCase;
 
-    @KafkaListener(topics = "user-registered-topic", groupId = "user-service-group")
+    @KafkaListener(topics = "${app.kafka.topics.user-registered:user-registered-topic}", groupId = "${app.kafka.consumer.user-group:user-service-group}")
+
     public void handleUserRegistered(UserRegisteredEvent event) {
         log.info("Received UserRegisteredEvent: userId={}, username={}", event.userId(), event.username());
 

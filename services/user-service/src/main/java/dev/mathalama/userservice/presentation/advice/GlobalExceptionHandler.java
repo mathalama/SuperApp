@@ -49,4 +49,29 @@ public class GlobalExceptionHandler {
         body.put("error", message);
         return ResponseEntity.status(status).body(body);
     }
+
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public org.springframework.http.ResponseEntity<Map<String, Object>> handleMaxSizeException(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+        return org.springframework.http.ResponseEntity
+                .status(org.springframework.http.HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(Map.of(
+                        "status", 413,
+                        "error", "Payload Too Large",
+                        "message", "Avatar file size exceeds maximum limit of 5MB",
+                        "timestamp", System.currentTimeMillis()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public org.springframework.http.ResponseEntity<Map<String, Object>> handleIllegalArgument(
+            IllegalArgumentException ex) {
+        return org.springframework.http.ResponseEntity
+                .status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "status", 400,
+                        "error", "Bad Request",
+                        "message", ex.getMessage(),
+                        "timestamp", System.currentTimeMillis()));
+    }
+
 }

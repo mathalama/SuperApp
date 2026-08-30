@@ -46,4 +46,22 @@ public class UserProfileController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PostMapping(value = "/me/avatar", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserProfileResponse> uploadAvatar(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+
+        UserProfile updated = userProfileUseCase.uploadAvatar(UUID.fromString(userId), file);
+        return ResponseEntity.ok(UserProfileMapper.toResponse(updated));
+    }
+
+    @DeleteMapping("/me/avatar")
+    public ResponseEntity<UserProfileResponse> deleteAvatar(
+            @RequestHeader("X-User-Id") String userId) {
+
+        UserProfile updated = userProfileUseCase.deleteAvatar(UUID.fromString(userId));
+        return ResponseEntity.ok(UserProfileMapper.toResponse(updated));
+    }
+
 }
