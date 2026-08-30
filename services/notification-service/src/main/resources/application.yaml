@@ -1,16 +1,21 @@
 server:
-  port: 8081
+  port: 8084
 
 spring:
   application:
     name: notification-service
 
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT}
+      
   threads:
     virtual:
       enabled: true
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
     consumer:
       group-id: notification-group
       auto-offset-reset: earliest
@@ -24,11 +29,20 @@ spring:
     password: ${MAIL_PASSWORD}
     properties:
       mail.smtp.auth: true
-      mail.smtp.ssl.enable: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
 
 app:
   frontend:
-    url: ${FRONTEND_URL:http://localhost:3000}
+    url: ${FRONTEND_URL}
+  kafka:
+    topics:
+      user-registered: user-registered-topic
+      verification-email: verification-email-topic
+      password-reset-email: password-reset-email-topic
+    consumer:
+      notification-group: notification-group
+      dlt-group: notification-dlt-group
 
 management:
   endpoints:
@@ -44,4 +58,4 @@ management:
       probability: 1.0
     zipkin:
       tracing:
-        endpoint: "http://localhost:9411/api/v2/spans"
+        endpoint: "http://zipkin:9411/api/v2/spans"

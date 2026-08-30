@@ -44,6 +44,7 @@ public class EmailService {
             log.info("Welcome email sent successfully to: {}", email);
         } catch (Exception e) {
             log.error("Failed to send welcome email to: {}", email, e);
+            throw new RuntimeException("Email sending failed", e);
         }
     }
 
@@ -67,6 +68,7 @@ public class EmailService {
             log.info("Verification email sent successfully to: {}", email);
         } catch (Exception ex) {
             log.error("Failed to send verification email to: {}", email, ex);
+            throw new RuntimeException("Email sending failed", ex);
         }
     }
 
@@ -92,6 +94,7 @@ public class EmailService {
             log.info("Password reset email sent successfully to: {}", email);
         } catch (Exception ex) {
             log.error("Failed to send password reset email to: {}", email, ex);
+            throw new RuntimeException("Email sending failed", ex);
         }
     }
 }
