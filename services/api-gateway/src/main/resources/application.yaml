@@ -6,50 +6,59 @@ spring:
   application:
     name: api-gateway
 
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+
   cloud:
     gateway:
-      routes:
-        # Identity Service
-        - id: identity-service
-          uri: http://identity-service:8080
-          predicates:
-            - Path=/auth/**
+      server:
+        webflux:
+          routes:
 
-        # Identity Service — OAuth2 flows
-        - id: identity-oauth
-          uri: http://identity-service:8080
-          predicates:
-            - Path=/oauth2/**,/login/oauth2/**,.well-known/**
+            # Identity Service
+            - id: identity-service
+              uri: http://identity-service:8080
+              predicates:
+                - Path=/auth/**
 
-        # User Service
-        - id: user-service
-          uri: http://user-service:8083
-          predicates:
-            - Path=/api/users/**
+            # Identity Service — OAuth2 flows
+            - id: identity-oauth
+              uri: http://identity-service:8080
+              predicates:
+                - Path=/oauth2/**,/login/oauth2/**,.well-known/**
 
-        # Notification Service
-        - id: notification-service
-          uri: http://notification-service:8081
-          predicates:
-            - Path=/api/notifications/**
+            # User Service
+            - id: user-service
+              uri: http://user-service:8083
+              predicates:
+                - Path=/api/users/**
 
-        # Swagger docs per service
-        - id: identity-docs
-          uri: http://identity-service:8080
-          predicates:
-            - Path=/identity/v3/api-docs/**
-          filters:
-            - StripPrefix=1
+            # Notification Service
+            - id: notification-service
+              uri: http://notification-service:8084
+              predicates:
+                - Path=/api/notifications/**
 
-        - id: user-docs
-          uri: http://user-service:8083
-          predicates:
-            - Path=/user/v3/api-docs/**
-          filters:
-            - StripPrefix=1
+            # Swagger docs per service
+            - id: identity-docs
+              uri: http://identity-service:8080
+              predicates:
+                - Path=/identity/v3/api-docs/**
+              filters:
+                - StripPrefix=1
 
-      default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+            - id: user-docs
+              uri: http://user-service:8083
+              predicates:
+                - Path=/user/v3/api-docs/**
+              filters:
+                - StripPrefix=1
+
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
 
   lifecycle:
     timeout-per-shutdown-phase: 20s
@@ -66,16 +75,21 @@ management:
     web:
       exposure:
         include: health,info,gateway
+
   endpoint:
     health:
       show-details: always
-    gateway:
-      enabled: true
+
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
 
 logging:
   level:
     root: INFO
     dev.mathalama.apigateway: DEBUG
     org.springframework.cloud.gateway: DEBUG
+
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
