@@ -1,0 +1,478 @@
+/* ==========================================================================
+   DOCUMENT WIZARD — CLEAN WHITE & ELEGANT FINTECH STYLING
+   ========================================================================== */
+
+.doc-wizard-root {
+  max-width: 640px;
+  margin: 0 auto;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+}
+
+.doc-wizard-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 36px 32px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Micro Progress Bar */
+.doc-wizard-progress-track {
+  height: 4px;
+  background: #f1f5f9;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: 28px;
+  position: relative;
+}
+
+.doc-wizard-progress-bar {
+  height: 100%;
+  background: var(--primary);
+  border-radius: var(--radius-full);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Header & Navigation Bar */
+.doc-wizard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.doc-wizard-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.doc-wizard-back-btn:hover {
+  color: var(--text-primary);
+  transform: translateX(-3px);
+}
+
+.doc-wizard-step-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid var(--primary-border);
+  border-radius: var(--radius-xs);
+  letter-spacing: 0.5px;
+}
+
+.doc-wizard-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+}
+
+.doc-wizard-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+/* Slide Transition Stages */
+.doc-wizard-stage {
+  position: relative;
+  width: 100%;
+}
+
+.doc-wizard-slide-forward {
+  animation: slideForward 0.25s ease-out forwards;
+}
+
+.doc-wizard-slide-backward {
+  animation: slideBackward 0.25s ease-out forwards;
+}
+
+@keyframes slideForward {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideBackward {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* -------------------------------------------------------------
+   STEP 1: Document Type Cards
+   ------------------------------------------------------------- */
+.doc-type-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.doc-type-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  background: #f8fafc;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.doc-type-card:hover,
+.doc-type-card:focus-visible {
+  border-color: var(--primary);
+  background: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  outline: none;
+}
+
+.doc-type-card-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.doc-type-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid var(--primary-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.doc-type-card:hover .doc-type-icon-box {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.doc-type-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 3px 0;
+  letter-spacing: -0.01em;
+}
+
+.doc-type-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.doc-type-arrow {
+  color: var(--text-muted);
+  transition: transform 0.2s, color 0.2s;
+}
+
+.doc-type-card:hover .doc-type-arrow {
+  color: var(--primary);
+  transform: translateX(4px);
+}
+
+/* -------------------------------------------------------------
+   STEP 2 & 3: Camera Viewfinder
+   ------------------------------------------------------------- */
+.viewfinder-container {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #0f172a;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+}
+
+.aspect-id-card {
+  aspect-ratio: 1.586 / 1;
+}
+
+.aspect-passport {
+  aspect-ratio: 1.42 / 1;
+}
+
+.viewfinder-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.viewfinder-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #0f172a;
+}
+
+/* Frame Brackets */
+.laser-frame {
+  position: absolute;
+  inset: 16px;
+  pointer-events: none;
+  border-radius: 10px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.4);
+}
+
+.laser-corner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-color: #ffffff;
+  border-style: solid;
+}
+
+.laser-top-left {
+  top: -2px;
+  left: -2px;
+  border-width: 3px 0 0 3px;
+  border-top-left-radius: 6px;
+}
+
+.laser-top-right {
+  top: -2px;
+  right: -2px;
+  border-width: 3px 3px 0 0;
+  border-top-right-radius: 6px;
+}
+
+.laser-bottom-left {
+  bottom: -2px;
+  left: -2px;
+  border-width: 0 0 3px 3px;
+  border-bottom-left-radius: 6px;
+}
+
+.laser-bottom-right {
+  bottom: -2px;
+  right: -2px;
+  border-width: 0 3px 3px 0;
+  border-bottom-right-radius: 6px;
+}
+
+/* Guidance Strip */
+.guideline-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.guide-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: #f8fafc;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.guide-badge.ok {
+  background: var(--emerald-light);
+  color: var(--emerald);
+  border-color: var(--emerald-border);
+}
+
+/* Action Controls */
+.wizard-actions-row {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-wizard-primary {
+  flex: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 22px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.22);
+  font-family: inherit;
+}
+
+.btn-wizard-primary:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.32);
+  transform: translateY(-1px);
+}
+
+.btn-wizard-secondary {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 18px;
+  background: #ffffff;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.btn-wizard-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* -------------------------------------------------------------
+   STEP 4: Dual-Card Inspection Review
+   ------------------------------------------------------------- */
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.review-card {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  text-align: center;
+  position: relative;
+}
+
+.review-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.4px;
+  font-family: var(--font-mono);
+}
+
+.review-card-img-wrapper {
+  width: 100%;
+  aspect-ratio: 1.586 / 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #0f172a;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+}
+
+.review-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.btn-retake-micro {
+  width: 100%;
+  padding: 8px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-retake-micro:hover {
+  background: var(--rose-light);
+  color: var(--rose);
+  border-color: var(--rose-border);
+}
+
+/* Fallback Dropzone */
+.dropzone-box {
+  border: 2px dashed var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 38px 24px;
+  text-align: center;
+  cursor: pointer;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.dropzone-box:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+@media (max-width: 540px) {
+  .doc-wizard-card {
+    padding: 24px 18px;
+    border-radius: var(--radius-lg);
+  }
+  .doc-wizard-title {
+    font-size: 1.2rem;
+  }
+  .review-grid {
+    grid-template-columns: 1fr;
+  }
+  .wizard-actions-row {
+    flex-direction: column;
+  }
+}

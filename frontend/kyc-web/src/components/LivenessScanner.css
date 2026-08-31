@@ -1,0 +1,195 @@
+/* ==========================================================================
+   BIOMETRIC LIVENESS SCANNER — CLEAN WHITE STYLING
+   ========================================================================== */
+
+.scanner {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 32px 28px;
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  position: relative;
+}
+
+.scanner-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+}
+
+.scanner-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+/* Biometric Viewport */
+.liveness-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 420px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #0f172a;
+  margin: 0 auto 20px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+}
+
+.scanner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scanner-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}
+
+.mirrored {
+  transform: scaleX(-1);
+}
+
+/* SVG Biometric HUD Overlay */
+.oval-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.dim {
+  fill: rgba(15, 23, 42, 0.6);
+}
+
+.oval-ring {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.6);
+  stroke-width: 3.5;
+  stroke-dasharray: 6 6;
+  transition: all 0.25s ease;
+}
+
+.oval-ring.stable {
+  stroke: #10b981;
+  stroke-width: 4.5;
+  stroke-dasharray: none;
+}
+
+/* Telemetry Chips */
+.pose-chip-row {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  width: 90%;
+  z-index: 10;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: rgba(15, 23, 42, 0.8);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: var(--font-mono);
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+}
+
+.chip.ok {
+  background: rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+  border-color: #10b981;
+}
+
+.chip.warn {
+  background: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  border-color: #ef4444;
+}
+
+/* Actions */
+.scanner-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.scanner-actions .btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 20px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-family: inherit;
+}
+
+.scanner-actions .btn-primary {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.22);
+}
+
+.scanner-actions .btn-primary:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.32);
+}
+
+.scanner-actions .btn-secondary {
+  background: #ffffff;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.scanner-actions .btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.btn-text {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 14px;
+  padding: 6px 12px;
+  transition: color 0.2s ease;
+}
+
+.btn-text:hover {
+  color: var(--text-primary);
+}
