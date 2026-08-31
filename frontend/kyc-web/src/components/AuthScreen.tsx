@@ -74,7 +74,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
         setView('verify');
         setError('Account pending email verification. Enter the 6-digit code from your email.');
       } else {
-        setError(err.message || 'Authentication failed. Please verify your credentials.');
+        setError(err.message || 'Authentication failed. Please check your credentials.');
       }
     } finally { setLoading(false); }
   };
@@ -152,17 +152,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div style={{ maxWidth: '440px', margin: '40px auto 60px', padding: '0 16px' }}>
-      <div className="card fade-in" style={{ padding: '36px 32px' }}>
+    <div style={{ maxWidth: '440px', margin: '16px auto 40px', width: '100%' }}>
+      <div className="card fade-in" style={{ padding: '28px 20px' }}>
         
-        {/* Segmented Switcher for Login / Register */}
+        {/* Segmented Switcher */}
         {(view === 'login' || view === 'register') && (
           <div style={{
             display: 'flex',
             background: '#f1f5f9',
             borderRadius: 'var(--radius-md)',
             padding: '4px',
-            marginBottom: '28px',
+            marginBottom: '24px',
             border: '1px solid var(--border)'
           }}>
             <button
@@ -170,7 +170,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               onClick={() => { resetMessages(); setView('login'); }}
               style={{
                 flex: 1,
-                padding: '9px 12px',
+                minHeight: '40px',
+                padding: '8px 12px',
                 borderRadius: 'var(--radius-sm)',
                 border: 'none',
                 background: view === 'login' ? '#ffffff' : 'transparent',
@@ -178,6 +179,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 fontWeight: 700,
                 fontSize: '13px',
                 cursor: 'pointer',
+                touchAction: 'manipulation',
                 transition: 'all 0.2s ease',
                 boxShadow: view === 'login' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
               }}
@@ -189,7 +191,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               onClick={() => { resetMessages(); setView('register'); }}
               style={{
                 flex: 1,
-                padding: '9px 12px',
+                minHeight: '40px',
+                padding: '8px 12px',
                 borderRadius: 'var(--radius-sm)',
                 border: 'none',
                 background: view === 'register' ? '#ffffff' : 'transparent',
@@ -197,6 +200,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 fontWeight: 700,
                 fontSize: '13px',
                 cursor: 'pointer',
+                touchAction: 'manipulation',
                 transition: 'all 0.2s ease',
                 boxShadow: view === 'register' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
               }}
@@ -206,30 +210,30 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
           </div>
         )}
 
-        {/* Header Icon & Title */}
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <div style={{
             display: 'inline-flex',
-            padding: '14px',
-            borderRadius: '16px',
+            padding: '12px',
+            borderRadius: '14px',
             background: view === 'verify' ? 'var(--emerald-light)'
               : (view === 'forgot_password' || view === 'reset_password') ? 'var(--amber-light)'
               : 'var(--primary-light)',
-            marginBottom: '14px',
+            marginBottom: '10px',
             border: `1px solid ${
               view === 'verify' ? 'var(--emerald-border)'
               : (view === 'forgot_password' || view === 'reset_password') ? 'var(--amber-border)'
               : 'var(--primary-border)'
             }`,
           }}>
-            {view === 'verify' ? <KeyRound size={28} color="var(--emerald)" />
-              : (view === 'forgot_password' || view === 'reset_password') ? <Lock size={28} color="var(--amber)" />
-              : view === 'register' ? <UserPlus size={28} color="var(--primary)" />
-              : <ShieldCheck size={28} color="var(--primary)" />
+            {view === 'verify' ? <KeyRound size={24} color="var(--emerald)" />
+              : (view === 'forgot_password' || view === 'reset_password') ? <Lock size={24} color="var(--amber)" />
+              : view === 'register' ? <UserPlus size={24} color="var(--primary)" />
+              : <ShieldCheck size={24} color="var(--primary)" />
             }
           </div>
 
-          <h2 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)', marginBottom: '6px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)', marginBottom: '4px' }}>
             {view === 'verify' ? 'Email Verification'
               : view === 'register' ? 'Create Account'
               : view === 'forgot_password' ? 'Reset Password'
@@ -237,7 +241,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               : 'Sign In'}
           </h2>
 
-          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.5 }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.4 }}>
             {view === 'verify' ? `Enter the 6-digit code sent to ${login || 'your email'}`
               : view === 'forgot_password' ? 'Enter your registered email to receive a password reset token'
               : view === 'reset_password' ? 'Enter the token from your email and set a new password'
@@ -246,23 +250,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
           </p>
         </div>
 
-        {/* Feedback Alerts */}
+        {/* Alerts */}
         {error && (
-          <div className="alert alert-error" style={{ marginBottom: '20px' }}>
-            <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+          <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
             <span>{error}</span>
           </div>
         )}
         {successMsg && (
-          <div className="alert alert-success" style={{ marginBottom: '20px' }}>
-            <CheckCircle2 size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+          <div className="alert alert-success" style={{ marginBottom: '16px' }}>
+            <CheckCircle2 size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
             <span>{successMsg}</span>
           </div>
         )}
 
         {/* SIGN IN FORM */}
         {view === 'login' && (
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <label className="label">Email or Username</label>
               <div style={{ position: 'relative' }}>
@@ -286,7 +290,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                   type="button"
                   onClick={() => { resetMessages(); setView('forgot_password'); }}
                   className="btn-ghost"
-                  style={{ padding: '0 4px', fontSize: '12px', color: 'var(--primary)' }}
+                  style={{ padding: '0 4px', fontSize: '12px', color: 'var(--primary)', minHeight: 'auto' }}
                 >
                   Forgot password?
                 </button>
@@ -314,7 +318,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                     border: 'none',
                     color: 'var(--text-muted)',
                     cursor: 'pointer',
-                    display: 'flex'
+                    display: 'flex',
+                    padding: '4px'
                   }}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -322,7 +327,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', marginTop: '6px', padding: '13px' }}>
+            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', marginTop: '6px' }}>
               {loading ? (
                 <>
                   <RefreshCw size={16} style={{ animation: 'spin 1.2s linear infinite' }} />
@@ -339,7 +344,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
 
         {/* REGISTER FORM */}
         {view === 'register' && (
-          <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <label className="label">Username</label>
               <input
@@ -376,7 +381,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               />
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', marginTop: '6px', padding: '13px' }}>
+            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', marginTop: '6px' }}>
               {loading ? (
                 <>
                   <RefreshCw size={16} style={{ animation: 'spin 1.2s linear infinite' }} />
@@ -391,28 +396,34 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
           </form>
         )}
 
-        {/* 6-DIGIT OTP VERIFY */}
+        {/* 6-DIGIT OTP VERIFY (FLUID RESPONSIVE FOR MOBILE) */}
         {view === 'verify' && (
-          <form onSubmit={handleVerifyCode} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <form onSubmit={handleVerifyCode} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             <div>
-              <label className="label" style={{ textAlign: 'center', marginBottom: '14px' }}>
+              <label className="label" style={{ textAlign: 'center', marginBottom: '12px' }}>
                 Enter 6-Digit Code
               </label>
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              <div style={{
+                display: 'flex',
+                gap: 'clamp(4px, 1.8vw, 8px)',
+                justifyContent: 'center',
+                width: '100%'
+              }}>
                 {otpDigits.map((digit, index) => (
                   <input
                     key={index}
                     ref={(el) => (otpInputsRef.current[index] = el)}
                     type="text"
+                    inputMode="numeric"
                     maxLength={6}
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
                     style={{
-                      width: '46px',
-                      height: '52px',
+                      width: 'clamp(36px, 12vw, 48px)',
+                      height: 'clamp(44px, 14vw, 54px)',
                       textAlign: 'center',
-                      fontSize: '20px',
+                      fontSize: 'clamp(18px, 5vw, 22px)',
                       fontWeight: 700,
                       fontFamily: 'var(--font-mono)',
                       background: '#ffffff',
@@ -422,6 +433,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                       outline: 'none',
                       boxShadow: digit ? '0 0 0 3px rgba(79, 70, 229, 0.12)' : 'none',
                       transition: 'all 0.2s ease',
+                      flexShrink: 1
                     }}
                   />
                 ))}
@@ -432,18 +444,18 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               type="submit"
               disabled={loading || otpDigits.some((d) => !d)}
               className="btn-primary"
-              style={{ width: '100%', padding: '13px' }}
+              style={{ width: '100%' }}
             >
               {loading ? 'Verifying...' : 'Verify Email'} <ArrowRight size={16} />
             </button>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button
                 type="button"
                 onClick={handleResendCode}
                 disabled={loading}
                 className="btn-ghost"
-                style={{ color: 'var(--primary)', fontSize: '12px' }}
+                style={{ color: 'var(--primary)', fontSize: '12px', padding: '4px' }}
               >
                 <RefreshCw size={13} style={{ marginRight: '4px' }} /> Resend code
               </button>
@@ -452,7 +464,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 type="button"
                 onClick={() => { resetMessages(); setView('login'); }}
                 className="btn-ghost"
-                style={{ fontSize: '12px' }}
+                style={{ fontSize: '12px', padding: '4px' }}
               >
                 Back to Sign In
               </button>
@@ -462,7 +474,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
 
         {/* FORGOT PASSWORD */}
         {view === 'forgot_password' && (
-          <form onSubmit={handleForgotPassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={handleForgotPassword} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <label className="label">Account Email</label>
               <input
@@ -475,11 +487,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               />
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', padding: '13px' }}>
+            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%' }}>
               {loading ? 'Sending...' : 'Send Reset Token'} <ArrowRight size={16} />
             </button>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <button
                 type="button"
                 onClick={() => { resetMessages(); setView('reset_password'); }}
@@ -502,7 +514,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
 
         {/* RESET PASSWORD */}
         {view === 'reset_password' && (
-          <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <label className="label">Reset Token from Email</label>
               <input
@@ -540,11 +552,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               />
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', padding: '13px' }}>
+            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%' }}>
               {loading ? 'Updating...' : 'Change Password'} <ArrowRight size={16} />
             </button>
 
-            <div style={{ textAlign: 'center', marginTop: '6px' }}>
+            <div style={{ textAlign: 'center' }}>
               <button
                 type="button"
                 onClick={() => { resetMessages(); setView('login'); }}

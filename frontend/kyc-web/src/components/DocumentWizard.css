@@ -1,5 +1,5 @@
 /* ==========================================================================
-   DOCUMENT WIZARD — CLEAN WHITE & ELEGANT FINTECH STYLING
+   DOCUMENT WIZARD — RESPONSIVE MOBILE-FIRST FINTECH STYLING
    ========================================================================== */
 
 .doc-wizard-root {
@@ -7,13 +7,14 @@
   margin: 0 auto;
   font-family: var(--font-sans);
   color: var(--text-primary);
+  width: 100%;
 }
 
 .doc-wizard-card {
   background: #ffffff;
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: 36px 32px;
+  border-radius: var(--radius-lg);
+  padding: 28px 22px;
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
@@ -25,7 +26,7 @@
   background: #f1f5f9;
   border-radius: var(--radius-full);
   overflow: hidden;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
   position: relative;
 }
 
@@ -36,7 +37,7 @@
   transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Header & Navigation Bar */
+/* Header */
 .doc-wizard-header {
   display: flex;
   align-items: center;
@@ -47,47 +48,47 @@
 .doc-wizard-back-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   background: transparent;
   border: none;
   color: var(--text-secondary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  padding: 4px 0;
+  padding: 6px 0;
+  touch-action: manipulation;
   transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .doc-wizard-back-btn:hover {
   color: var(--text-primary);
-  transform: translateX(-3px);
 }
 
 .doc-wizard-step-badge {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  padding: 4px 10px;
+  padding: 3px 8px;
   background: var(--primary-light);
   color: var(--primary);
   border: 1px solid var(--primary-border);
   border-radius: var(--radius-xs);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
 }
 
 .doc-wizard-title {
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: var(--text-primary);
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
   letter-spacing: -0.02em;
 }
 
 .doc-wizard-subtitle {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--text-secondary);
-  margin: 0 0 24px 0;
-  line-height: 1.5;
+  margin: 0 0 18px 0;
+  line-height: 1.45;
 }
 
 /* Slide Transition Stages */
@@ -132,7 +133,7 @@
 .doc-type-grid {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 12px;
 }
 
@@ -140,36 +141,42 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px;
+  padding: 14px 16px;
   background: #f8fafc;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-md);
   cursor: pointer;
+  touch-action: manipulation;
   transition: all 0.2s ease;
   text-align: left;
   position: relative;
   overflow: hidden;
+  min-height: 64px;
 }
 
 .doc-type-card:hover,
 .doc-type-card:focus-visible {
   border-color: var(--primary);
   background: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   outline: none;
+}
+
+.doc-type-card:active {
+  transform: scale(0.99);
 }
 
 .doc-type-card-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  min-width: 0;
 }
 
 .doc-type-icon-box {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
   background: var(--primary-light);
   color: var(--primary);
   border: 1px solid var(--primary-border);
@@ -177,36 +184,27 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 0.2s ease;
-}
-
-.doc-type-card:hover .doc-type-icon-box {
-  background: var(--primary);
-  color: #ffffff;
 }
 
 .doc-type-name {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 3px 0;
+  margin: 0 0 2px 0;
   letter-spacing: -0.01em;
+  line-height: 1.3;
 }
 
 .doc-type-desc {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: var(--text-secondary);
   margin: 0;
+  line-height: 1.35;
 }
 
 .doc-type-arrow {
   color: var(--text-muted);
-  transition: transform 0.2s, color 0.2s;
-}
-
-.doc-type-card:hover .doc-type-arrow {
-  color: var(--primary);
-  transform: translateX(4px);
+  flex-shrink: 0;
 }
 
 /* -------------------------------------------------------------
@@ -218,7 +216,7 @@
   border-radius: var(--radius-md);
   overflow: hidden;
   background: #0f172a;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -249,16 +247,16 @@
 /* Frame Brackets */
 .laser-frame {
   position: absolute;
-  inset: 16px;
+  inset: 12px;
   pointer-events: none;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1.5px dashed rgba(255, 255, 255, 0.4);
 }
 
 .laser-corner {
   position: absolute;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   border-color: #ffffff;
   border-style: solid;
 }
@@ -296,18 +294,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .guide-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
+  gap: 4px;
+  font-size: 0.72rem;
   font-weight: 600;
-  padding: 4px 12px;
+  padding: 4px 10px;
   border-radius: var(--radius-full);
   background: #f8fafc;
   color: var(--text-secondary);
@@ -323,7 +321,7 @@
 /* Action Controls */
 .wizard-actions-row {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
 .btn-wizard-primary {
@@ -332,14 +330,16 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 13px 22px;
+  min-height: 48px;
+  padding: 12px 18px;
   background: var(--primary);
   color: #ffffff;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
   border-radius: var(--radius-md);
   border: none;
   cursor: pointer;
+  touch-action: manipulation;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(79, 70, 229, 0.22);
   font-family: inherit;
@@ -347,8 +347,10 @@
 
 .btn-wizard-primary:hover {
   background: var(--primary-hover);
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.32);
-  transform: translateY(-1px);
+}
+
+.btn-wizard-primary:active {
+  transform: scale(0.98);
 }
 
 .btn-wizard-secondary {
@@ -356,22 +358,23 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 13px 18px;
+  gap: 6px;
+  min-height: 48px;
+  padding: 12px 14px;
   background: #ffffff;
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   cursor: pointer;
+  touch-action: manipulation;
   transition: all 0.2s ease;
   font-family: inherit;
 }
 
-.btn-wizard-secondary:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+.btn-wizard-secondary:active {
+  transform: scale(0.98);
 }
 
 /* -------------------------------------------------------------
@@ -379,16 +382,16 @@
    ------------------------------------------------------------- */
 .review-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
-  margin-bottom: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
 .review-card {
   background: #f8fafc;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 14px;
+  padding: 12px;
   text-align: center;
   position: relative;
 }
@@ -397,11 +400,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
-  font-size: 0.78rem;
+  margin-bottom: 8px;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-secondary);
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   font-family: var(--font-mono);
 }
 
@@ -411,7 +414,7 @@
   border-radius: var(--radius-sm);
   overflow: hidden;
   background: #0f172a;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   border: 1px solid var(--border);
 }
 
@@ -423,18 +426,20 @@
 
 .btn-retake-micro {
   width: 100%;
-  padding: 8px;
+  min-height: 38px;
+  padding: 6px 10px;
   background: #ffffff;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  touch-action: manipulation;
   transition: all 0.2s ease;
 }
 
@@ -444,16 +449,17 @@
   border-color: var(--rose-border);
 }
 
-/* Fallback Dropzone */
+/* Dropzone */
 .dropzone-box {
   border: 2px dashed var(--border-light);
   border-radius: var(--radius-md);
-  padding: 38px 24px;
+  padding: 30px 16px;
   text-align: center;
   cursor: pointer;
   background: #f8fafc;
+  touch-action: manipulation;
   transition: all 0.2s ease;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .dropzone-box:hover {
@@ -461,18 +467,20 @@
   background: var(--primary-light);
 }
 
-@media (max-width: 540px) {
+@media (max-width: 480px) {
   .doc-wizard-card {
-    padding: 24px 18px;
-    border-radius: var(--radius-lg);
+    padding: 20px 14px;
   }
   .doc-wizard-title {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
   }
   .review-grid {
     grid-template-columns: 1fr;
   }
   .wizard-actions-row {
     flex-direction: column;
+  }
+  .btn-wizard-primary, .btn-wizard-secondary {
+    width: 100%;
   }
 }

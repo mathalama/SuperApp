@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 /* ==========================================================================
-   SUPERAPP KYC — CLEAN WHITE & ELEGANT FINTECH DESIGN SYSTEM
+   SUPERAPP KYC — RESPONSIVE MOBILE-FIRST FINTECH DESIGN SYSTEM
    ========================================================================== */
 
 :root {
@@ -9,7 +9,7 @@
   --bg-base: #f8fafc;
   --bg-surface: #ffffff;
   --bg-surface-elevated: #ffffff;
-  --bg-surface-translucent: rgba(255, 255, 255, 0.92);
+  --bg-surface-translucent: rgba(255, 255, 255, 0.95);
   --bg-input: #ffffff;
   --bg-input-focus: #ffffff;
 
@@ -24,13 +24,6 @@
   --primary-hover: #4338ca;
   --primary-light: #eef2ff;
   --primary-border: #c7d2fe;
-  --primary-glow: rgba(79, 70, 229, 0.15);
-
-  /* Cyan */
-  --cyan: #0284c7;
-  --cyan-hover: #0369a1;
-  --cyan-light: #f0f9ff;
-  --cyan-border: #bae6fd;
 
   /* Emerald (Verified) */
   --emerald: #059669;
@@ -75,13 +68,14 @@
 }
 
 /* ==========================================================================
-   RESET & BASE
+   RESET & MOBILE-FIRST BASE
    ========================================================================== */
 
 *, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
@@ -97,12 +91,15 @@ body {
   font-family: var(--font-sans);
   background-color: var(--bg-base);
   color: var(--text-primary);
-  line-height: 1.6;
+  line-height: 1.5;
   min-height: 100vh;
+  min-height: -webkit-fill-available;
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 #root {
   min-height: 100vh;
+  min-height: -webkit-fill-available;
   display: flex;
   flex-direction: column;
 }
@@ -135,7 +132,7 @@ a:hover {
 }
 
 /* ==========================================================================
-   BUTTONS
+   TOUCH-FRIENDLY BUTTONS (MIN TOUCH TARGET >= 44PX)
    ========================================================================== */
 
 .btn-primary {
@@ -143,7 +140,8 @@ a:hover {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 22px;
+  min-height: 48px;
+  padding: 12px 20px;
   background: var(--primary);
   color: #ffffff;
   border: 1px solid transparent;
@@ -153,6 +151,7 @@ a:hover {
   font-weight: 700;
   letter-spacing: -0.01em;
   cursor: pointer;
+  touch-action: manipulation;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(79, 70, 229, 0.22);
 }
@@ -160,11 +159,10 @@ a:hover {
 .btn-primary:hover:not(:disabled) {
   background: var(--primary-hover);
   box-shadow: 0 4px 14px rgba(79, 70, 229, 0.32);
-  transform: translateY(-1px);
 }
 
 .btn-primary:active:not(:disabled) {
-  transform: translateY(0);
+  transform: scale(0.98);
 }
 
 .btn-primary:disabled {
@@ -178,7 +176,8 @@ a:hover {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 20px;
+  min-height: 48px;
+  padding: 12px 18px;
   background: #ffffff;
   color: var(--text-primary);
   border: 1px solid var(--border);
@@ -187,12 +186,17 @@ a:hover {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  touch-action: manipulation;
   transition: all 0.2s ease;
 }
 
 .btn-secondary:hover:not(:disabled) {
   background: #f8fafc;
   border-color: #cbd5e1;
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn-secondary:disabled {
@@ -205,6 +209,7 @@ a:hover {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  min-height: 40px;
   background: transparent;
   border: none;
   color: var(--text-secondary);
@@ -213,6 +218,7 @@ a:hover {
   cursor: pointer;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
+  touch-action: manipulation;
   transition: all 0.2s ease;
 }
 
@@ -227,13 +233,14 @@ a:hover {
 
 .input {
   width: 100%;
+  min-height: 46px;
   padding: 12px 16px;
   border-radius: var(--radius-md);
   background: #ffffff;
   border: 1px solid var(--border);
   color: var(--text-primary);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 15px; /* >=16px or 15px with proper scaling prevents iOS zoom */
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -257,18 +264,18 @@ a:hover {
 }
 
 /* ==========================================================================
-   STEPPER
+   RESPONSIVE STEPPER
    ========================================================================== */
 
 .stepper-container {
   max-width: 640px;
-  margin: 0 auto 32px;
+  margin: 0 auto 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: relative;
   background: #ffffff;
-  padding: 12px 24px;
+  padding: 10px 18px;
   border-radius: var(--radius-full);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
@@ -282,6 +289,7 @@ a:hover {
   font-weight: 600;
   font-size: 13px;
   transition: all 0.25s ease;
+  white-space: nowrap;
 }
 
 .stepper-item.active {
@@ -293,18 +301,19 @@ a:hover {
 }
 
 .stepper-circle {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   font-family: var(--font-mono);
   background: #f8fafc;
   color: var(--text-muted);
   border: 1.5px solid var(--border);
+  flex-shrink: 0;
   transition: all 0.25s ease;
 }
 
@@ -324,7 +333,8 @@ a:hover {
   flex: 1;
   height: 2px;
   background: var(--border);
-  margin: 0 12px;
+  margin: 0 10px;
+  min-width: 12px;
 }
 
 .stepper-line.completed {
@@ -336,13 +346,13 @@ a:hover {
    ========================================================================== */
 
 .alert {
-  padding: 14px 18px;
+  padding: 12px 16px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  font-size: 14px;
-  line-height: 1.5;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .alert-error {
@@ -370,13 +380,13 @@ a:hover {
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 5px;
+  padding: 3px 8px;
   border-radius: var(--radius-full);
   font-size: 11px;
   font-weight: 700;
   font-family: var(--font-mono);
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   text-transform: uppercase;
 }
 
@@ -403,7 +413,7 @@ a:hover {
    ========================================================================== */
 
 .stat-card {
-  padding: 20px 16px;
+  padding: 16px 12px;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -413,16 +423,16 @@ a:hover {
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
+  letter-spacing: 0.4px;
+  margin-bottom: 4px;
 }
 
 .stat-value {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
   font-family: var(--font-mono);
   letter-spacing: -0.5px;
@@ -430,8 +440,44 @@ a:hover {
 }
 
 .stat-hint {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
+}
+
+/* ==========================================================================
+   MEDIA QUERIES (MOBILE RESPONSIVENESS)
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .stepper-container {
+    padding: 8px 12px;
+    margin-bottom: 18px;
+  }
+  .stepper-text {
+    display: none;
+  }
+  .stepper-item.active .stepper-text {
+    display: inline;
+    font-size: 12px;
+  }
+  .stepper-circle {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+  }
+  .stepper-line {
+    margin: 0 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    border-radius: var(--radius-md);
+  }
+  .btn-primary, .btn-secondary {
+    font-size: 13px;
+    padding: 11px 16px;
+  }
 }
 
 /* ==========================================================================

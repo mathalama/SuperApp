@@ -20,7 +20,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onLogout }) => {
     if (kycStatus === 'VERIFIED') return 'Verified';
     if (kycStatus === 'REJECTED') return 'Rejected';
     if (kycStatus === 'IN_PROGRESS') return 'In Progress';
-    if (kycStatus === 'MANUAL_REVIEW') return 'Manual Review';
+    if (kycStatus === 'MANUAL_REVIEW') return 'Review';
     return 'Pending';
   };
 
@@ -28,8 +28,8 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onLogout }) => {
     <header style={{
       background: '#ffffff',
       borderBottom: '1px solid var(--border)',
-      padding: '0 28px',
-      height: '64px',
+      padding: '0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left))',
+      height: '58px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -39,71 +39,74 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onLogout }) => {
       boxShadow: 'var(--shadow-xs)'
     }}>
       {/* Brand Identity */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
         <div style={{
-          width: '36px',
-          height: '36px',
-          borderRadius: '10px',
+          width: '32px',
+          height: '32px',
+          borderRadius: '8px',
           background: 'var(--primary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           boxShadow: '0 2px 6px rgba(79, 70, 229, 0.25)',
+          flexShrink: 0
         }}>
-          <ShieldCheck size={20} color="#ffffff" />
+          <ShieldCheck size={18} color="#ffffff" />
         </div>
-        <div>
+        <div style={{ minWidth: 0 }}>
           <div style={{
-            fontSize: '16px',
+            fontSize: '15px',
             fontWeight: 800,
             color: 'var(--text-primary)',
             letterSpacing: '-0.02em',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px'
+            gap: '4px',
+            whiteSpace: 'nowrap'
           }}>
             SuperApp <span style={{ color: 'var(--primary)', fontWeight: 700 }}>KYC</span>
-          </div>
-          <div style={{
-            fontSize: '11px',
-            color: 'var(--text-muted)',
-            fontWeight: 600,
-            letterSpacing: '0.2px',
-          }}>
-            Identity Verification
           </div>
         </div>
       </div>
 
       {/* User Status Bar */}
       {user && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
             background: '#f8fafc',
-            padding: '5px 12px 5px 8px',
+            padding: '4px 8px',
             borderRadius: 'var(--radius-full)',
-            border: '1px solid var(--border)'
+            border: '1px solid var(--border)',
+            maxWidth: '160px'
           }}>
             <div style={{
-              width: '24px',
-              height: '24px',
+              width: '20px',
+              height: '20px',
               borderRadius: '50%',
               background: 'var(--primary-light)',
               color: 'var(--primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0
             }}>
-              <UserIcon size={13} />
+              <UserIcon size={11} />
             </div>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            <span style={{
+              fontSize: '12px',
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
               {user.username}
             </span>
             {kycStatus && (
-              <span className={getBadgeClass()}>
+              <span className={getBadgeClass()} style={{ fontSize: '10px', padding: '2px 6px' }}>
                 {getBadgeLabel()}
               </span>
             )}
@@ -111,33 +114,27 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onLogout }) => {
 
           <button
             onClick={onLogout}
+            title="Sign Out"
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '7px 13px',
+              justifyContent: 'center',
+              gap: '4px',
+              height: '34px',
+              padding: '0 10px',
               background: '#ffffff',
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius-sm)',
-              fontSize: '13px',
+              fontSize: '12px',
               color: 'var(--text-secondary)',
               fontWeight: 500,
               cursor: 'pointer',
+              touchAction: 'manipulation',
               transition: 'all 0.2s ease',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--rose)';
-              e.currentTarget.style.color = 'var(--rose)';
-              e.currentTarget.style.background = 'var(--rose-light)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.background = '#ffffff';
-            }}
           >
-            <LogOut size={14} />
-            <span>Sign Out</span>
+            <LogOut size={13} />
+            <span className="navbar-logout-text" style={{ display: 'inline' }}>Exit</span>
           </button>
         </div>
       )}

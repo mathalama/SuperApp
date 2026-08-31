@@ -22,7 +22,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
 
   const getStatusConfig = () => {
     if (isVerified) return {
-      icon: <CheckCircle2 size={44} color="var(--emerald)" />,
+      icon: <CheckCircle2 size={38} color="var(--emerald)" />,
       title: 'Verification Successful',
       subtitle: 'Your identity document and facial biometrics have been authenticated and verified.',
       bg: 'var(--emerald-light)',
@@ -30,7 +30,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
       badgeClass: 'badge badge-verified'
     };
     if (isRejected) return {
-      icon: <XCircle size={44} color="var(--rose)" />,
+      icon: <XCircle size={38} color="var(--rose)" />,
       title: 'Verification Declined',
       subtitle: result.rejectionReason || 'The submitted documents or biometric check failed integrity thresholds.',
       bg: 'var(--rose-light)',
@@ -38,7 +38,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
       badgeClass: 'badge badge-rejected'
     };
     return {
-      icon: <AlertTriangle size={44} color="var(--amber)" />,
+      icon: <AlertTriangle size={38} color="var(--amber)" />,
       title: 'Manual Review Queued',
       subtitle: result.rejectionReason || 'Your verification is queued for manual compliance review.',
       bg: 'var(--amber-light)',
@@ -69,106 +69,115 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
   ].filter(f => f.value);
 
   return (
-    <div className="fade-in" style={{ maxWidth: '640px', margin: '0 auto' }}>
+    <div className="fade-in" style={{ maxWidth: '640px', margin: '0 auto', width: '100%' }}>
       
       {/* Status Hero Banner */}
       <div className="card" style={{
-        padding: '32px 28px',
-        marginBottom: '18px',
+        padding: '24px 18px',
+        marginBottom: '14px',
         textAlign: 'center',
         background: status.bg,
         borderColor: status.border,
       }}>
-        <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'center' }}>
           {status.icon}
         </div>
-        <div style={{ marginBottom: '8px' }}>
-          <span className={status.badgeClass} style={{ fontSize: '12px' }}>
+        <div style={{ marginBottom: '6px' }}>
+          <span className={status.badgeClass} style={{ fontSize: '11px' }}>
             STATUS: {result.status}
           </span>
         </div>
-        <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px', letterSpacing: '-0.02em' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.02em' }}>
           {status.title}
         </h2>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto', lineHeight: 1.5 }}>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto', lineHeight: 1.45 }}>
           {status.subtitle}
         </p>
       </div>
 
       {/* Biometric Scores Telemetry Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '18px' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '8px',
+        marginBottom: '14px'
+      }}>
         
         {/* Liveness Score */}
         <div className="card stat-card">
           <div className="stat-label">
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Fingerprint size={13} color="var(--primary)" /> Liveness
+            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <Fingerprint size={12} color="var(--primary)" /> Liveness
             </span>
           </div>
           <div className="stat-value" style={{ color: getScoreColor(result.livenessScore, 0.85) }}>
             {formatScore(result.livenessScore)}
           </div>
-          <div className="stat-hint">Threshold ≥ 85%</div>
+          <div className="stat-hint">Cutoff ≥ 85%</div>
         </div>
 
         {/* Face Match Score */}
         <div className="card stat-card">
           <div className="stat-label">
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ScanFace size={13} color="var(--primary)" /> Face Match
+            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <ScanFace size={12} color="var(--primary)" /> Match
             </span>
           </div>
           <div className="stat-value" style={{ color: getScoreColor(result.faceMatchScore, 0.70) }}>
             {formatScore(result.faceMatchScore)}
           </div>
-          <div className="stat-hint">Threshold ≥ 70%</div>
+          <div className="stat-hint">Cutoff ≥ 70%</div>
         </div>
 
         {/* MRZ Validity */}
         <div className="card stat-card">
           <div className="stat-label">
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ShieldCheck size={13} color="var(--emerald)" /> MRZ Check
+            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <ShieldCheck size={12} color="var(--emerald)" /> MRZ
             </span>
           </div>
           <div className="stat-value" style={{
             color: result.mrzValid ? 'var(--emerald)' : 'var(--rose)',
-            fontSize: '22px',
+            fontSize: '18px',
           }}>
             {result.mrzValid === null ? 'N/A' : result.mrzValid ? 'VALID' : 'INVALID'}
           </div>
-          <div className="stat-hint">ICAO Checksums</div>
+          <div className="stat-hint">ICAO Valid</div>
         </div>
 
       </div>
 
       {/* Extracted Document OCR Data Sheet */}
       {extractedFields.length > 0 && (
-        <div className="card" style={{ padding: '24px 22px', marginBottom: '18px' }}>
+        <div className="card" style={{ padding: '18px 16px', marginBottom: '14px' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '18px',
+            marginBottom: '14px',
             borderBottom: '1px solid var(--border)',
-            paddingBottom: '12px'
+            paddingBottom: '10px'
           }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FileText size={17} color="var(--primary)" />
-              Extracted Document Data (OCR / MRZ)
+            <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <FileText size={16} color="var(--primary)" />
+              Extracted Document Data
             </h3>
-            <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-              AUTOMATICALLY EXTRACTED
+            <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+              OCR / MRZ
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 18px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '10px'
+          }}>
             {extractedFields.map((field) => (
               <div
                 key={field.label}
                 style={{
                   background: '#f8fafc',
-                  padding: '10px 12px',
+                  padding: '8px 10px',
                   borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--border)',
                   display: 'flex',
@@ -177,10 +186,10 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
                 }}
               >
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '2px' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '1px' }}>
                     {field.label}
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
                     {field.value}
                   </div>
                 </div>
@@ -190,7 +199,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
                   onClick={() => field.value && copyToClipboard(field.value, field.label)}
                   className="btn-ghost"
                   title="Copy to clipboard"
-                  style={{ padding: '4px', color: copiedField === field.label ? 'var(--emerald)' : 'var(--text-muted)' }}
+                  style={{ padding: '6px', minHeight: '34px', color: copiedField === field.label ? 'var(--emerald)' : 'var(--text-muted)' }}
                 >
                   {copiedField === field.label ? <Check size={14} /> : <Copy size={14} />}
                 </button>
@@ -201,7 +210,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
       )}
 
       {/* Raw JSON Inspector */}
-      <div className="card" style={{ padding: '16px 20px', marginBottom: '18px' }}>
+      <div className="card" style={{ padding: '12px 16px', marginBottom: '14px' }}>
         <button
           type="button"
           onClick={() => setShowRawJson(!showRawJson)}
@@ -218,28 +227,30 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
             fontWeight: 600,
             fontFamily: 'var(--font-sans)',
             padding: 0,
+            minHeight: '36px',
+            touchAction: 'manipulation'
           }}
         >
           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <FileText size={15} color="var(--primary)" />
-            Server Raw Response Payload
+            <FileText size={14} color="var(--primary)" />
+            Server Raw Payload Response
           </span>
-          {showRawJson ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          {showRawJson ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
         </button>
 
         {showRawJson && (
           <pre style={{
-            marginTop: '12px',
-            padding: '14px',
+            marginTop: '10px',
+            padding: '12px',
             background: '#f8fafc',
             borderRadius: 'var(--radius-sm)',
-            fontSize: '12px',
+            fontSize: '11px',
             fontFamily: 'var(--font-mono)',
             color: 'var(--text-primary)',
             overflow: 'auto',
-            maxHeight: '300px',
+            maxHeight: '260px',
             border: '1px solid var(--border)',
-            lineHeight: 1.5,
+            lineHeight: 1.4,
           }}>
             {JSON.stringify(result, null, 2)}
           </pre>
@@ -247,8 +258,8 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: '12px' }}>
-        <button onClick={onReset} className="btn-primary" style={{ width: '100%', padding: '13px' }}>
+      <div>
+        <button onClick={onReset} className="btn-primary" style={{ width: '100%' }}>
           <RefreshCw size={16} /> {isVerified ? 'Verify Another Document' : 'Try Again'}
         </button>
       </div>
