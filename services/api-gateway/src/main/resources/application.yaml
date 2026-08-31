@@ -57,6 +57,27 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # KYC Service
+            - id: kyc-service
+              uri: http://kyc-service:8085
+              predicates:
+                - Path=/api/kyc/**
+
+            # KYC ML Service (Live Head Pose & Fast Checks)
+            - id: kyc-ml-service
+              uri: http://kyc-ml-service:8000
+              predicates:
+                - Path=/api/v1/**
+
+            # KYC Swagger docs
+            - id: kyc-docs
+              uri: http://kyc-service:8085
+              predicates:
+                - Path=/kyc/v3/api-docs/**
+              filters:
+                - StripPrefix=1
+
+
           default-filters:
             - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
 

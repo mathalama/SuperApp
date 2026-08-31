@@ -77,6 +77,33 @@ Desktop.ini
 .directory
 .Trash-*
 
+# --- Node.js & Frontend ---
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+dist-ssr/
+**/dist-ssr/
+*.local
+.npm/
+.vite/
+**/.vite/
+
+# --- Python ---
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+*.egg-info/
+.pytest_cache/
+.coverage
+
 # --- Logs & Temp ---
 *.log
 **/*.log

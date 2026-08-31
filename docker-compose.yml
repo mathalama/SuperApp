@@ -36,7 +36,7 @@ services:
     build: ./services/identity-service
     container_name: identity-service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${IDENTITY_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
 
@@ -129,6 +129,48 @@ services:
     networks:
       - super-app-network
 
+  # KYC SERVICE (Business Logic & Orchestration)
+  kyc-service:
+    build: ./services/kyc-service
+    container_name: kyc-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${KYC_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${S3_USER}
+      S3_SECRET_KEY: ${S3_PASSWORD}
+      S3_BUCKET_KYC: ${S3_BUCKET_KYC}
+      KYC_ML_SERVICE_URL: ${KYC_ML_SERVICE_URL}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      kyc-ml-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8085 || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - super-app-network
+
+  # KYC ML INFERENCE SERVICE (Python / ONNX / OCR / Liveness / ArcFace)
+  kyc-ml-service:
+    build: ./services/kyc-ml-service
+    container_name: kyc-ml-service
+    environment:
+      LOG_LEVEL: info
+    networks:
+      - super-app-network
 
   # IDENTITY MIGRATION
   migrate-identity:
@@ -139,7 +181,7 @@ services:
     env_file:
       - .env
     command:
-      - -url=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      - -url=jdbc:postgresql://postgres:5432/${IDENTITY_DB}
       - -user=${POSTGRES_USER}
       - -password=${POSTGRES_PASSWORD}
       - migrate
@@ -171,6 +213,27 @@ services:
     networks:
       - super-app-network
 
+  # KYC MIGRATION
+  migrate-kyc:
+    build:
+      context: ./services/kyc-service
+      dockerfile: Dockerfile.flyway
+    container_name: migrate-kyc
+    env_file:
+      - .env
+    command:
+      - -url=jdbc:postgresql://postgres:5432/${KYC_DB}
+      - -user=${POSTGRES_USER}
+      - -password=${POSTGRES_PASSWORD}
+      - migrate
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - super-app-network
+
+
 
   # POSTGRESQL
   postgres:
@@ -179,7 +242,7 @@ services:
     ports:
       - "${POSTGRES_PORT}:5432"
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_DB: postgres
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
