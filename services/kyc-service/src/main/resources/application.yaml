@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: kyc-service
+
+  datasource:
+    url: jdbc:postgresql://postgres:5432/${KYC_DB:kyc_db}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: false
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 40MB
+
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: 8085
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+s3:
+  endpoint: ${S3_ENDPOINT:http://localhost:8504}
+  access-key: ${S3_ACCESS_KEY:minioadmin}
+  secret-key: ${S3_SECRET_KEY:minioadmin}
+  bucket:
+    kyc: ${S3_BUCKET_KYC:kyc-documents}
+
+ml-service:
+  url: ${KYC_ML_SERVICE_URL:http://kyc-ml-service:8000}
+  thresholds:
+    liveness: 0.85
+    similarity: 0.70
+
+logging:
+  level:
+    root: INFO
+    dev.mathalama.kycservice: DEBUG
