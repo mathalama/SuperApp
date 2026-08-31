@@ -78,12 +78,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
             eventPublisher.publishUserRegistered(event);
 
             String verificationToken = verificationTokenStore.generateVerificationToken(savedUser);
-
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                public void afterCommit() {
-                    emailSender.sendVerificationEmail(email, username, verificationToken);
-                }
-            });
+            emailSender.sendVerificationEmail(email, username, verificationToken);
 
             log.info("User registered successfully: {} (email: {}). Verification email sent.", username, email);
             

@@ -10,6 +10,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import dev.mathalama.identityservice.domain.enums.AccountState;
+import dev.mathalama.identityservice.domain.enums.KYCLifeCycle;
 import dev.mathalama.identityservice.domain.enums.SecurityStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -52,11 +53,7 @@ public class User implements UserDetails {
     private String password;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "users_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
+    @JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
     private String permissions;
@@ -64,6 +61,10 @@ public class User implements UserDetails {
     @Column(name = "account_state", nullable = false)
     @Enumerated(EnumType.STRING)
     private AccountState accountState;
+
+    @Column(name = "kyc_status", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private KYCLifeCycle kycStatus = KYCLifeCycle.PENDING;
 
     @Column(name = "security_status")
     @Enumerated(EnumType.STRING)
