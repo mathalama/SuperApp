@@ -1,6 +1,7 @@
 import logging
 import cv2
 import numpy as np
+from typing import Optional
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from app.schemas.response import KycVerifyResponse, ExtractedData
 from app.pipeline.ocr_mrz_reader import OcrMrzReader

@@ -108,3 +108,43 @@ ENV/
 *.log
 **/*.log
 .aider*
+
+# --- Kubernetes & Infrastructure Secrets ---
+# Raw Kubernetes secrets manifests (allow example/template files)
+k8s/*secret*.yaml
+k8s/*secrets*.yaml
+k8s/*secret*.yml
+k8s/*secrets*.yml
+!k8s/*secret*.example.yaml
+!k8s/*secrets*.example.yaml
+!k8s/*secret*.template.yaml
+!k8s/*secrets*.template.yaml
+!k8s/*secret*.example.yml
+!k8s/*secrets*.example.yml
+
+# Cluster credentials, contexts and kubeconfigs
+kubeconfig
+*.kubeconfig
+k8s/kubeconfig*
+.kube/
+
+# TLS / SSL Certificates and private keys
+*.pem
+*.key
+*.crt
+*.csr
+*.pfx
+*.p12
+
+# Helm & Kustomize local builds/artifacts
+*.tgz
+.helm/
+charts/*/charts/
+k8s/local/
+k8s/overlays/local/
+
+# Decrypted SOPS / SealedSecrets files
+*.dec.yaml
+*.dec.yml
+*.decrypted.yaml
+*.decrypted.yml

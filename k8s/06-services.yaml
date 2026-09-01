@@ -1,0 +1,398 @@
+# ==============================================================================
+# KYC ML SERVICE
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kyc-ml-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kyc-ml-service
+  template:
+    metadata:
+      labels:
+        app: kyc-ml-service
+    spec:
+      containers:
+        - name: kyc-ml-service
+          image: app/kyc-ml-service:v1.1.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: LOG_LEVEL
+              value: "info"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kyc-ml-service
+spec:
+  ports:
+    - port: 8000
+      targetPort: 8000
+  selector:
+    app: kyc-ml-service
+---
+# ==============================================================================
+# IDENTITY SERVICE
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identity-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: identity-service
+  template:
+    metadata:
+      labels:
+        app: identity-service
+    spec:
+      initContainers:
+      - name: migrate-identity
+        image: app/migrate-identity:latest
+        imagePullPolicy: IfNotPresent
+        args:
+        - -url=jdbc:postgresql://postgres:5432/identity_db
+        - -user=$(POSTGRES_USER)
+        - -password=$(POSTGRES_PASSWORD)
+        - migrate
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_PASSWORD
+      containers:
+      - name: identity-service
+        image: app/identity-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: app-config
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres:5432/identity_db"
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_USER
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_PASSWORD
+        - name: SECURITY_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: SECURITY_USER
+        - name: SECURITY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: SECURITY_PASSWORD
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: JWT_SECRET
+        - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: GOOGLE_CLIENT_ID
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: GOOGLE_CLIENT_SECRET
+        - name: SPRING_MAIL_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: MAIL_USERNAME
+        - name: SPRING_MAIL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: MAIL_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: identity-service
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    app: identity-service
+---
+# ==============================================================================
+# USER SERVICE (С Init-контейнером миграции)
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      initContainers:
+        - name: migrate-user
+          image: app/migrate-user:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - -url=jdbc:postgresql://postgres:5432/user_db
+            - -user=$(POSTGRES_USER)
+            - -password=$(POSTGRES_PASSWORD)
+            - migrate
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: POSTGRES_PASSWORD
+      containers:
+        - name: user-service
+          image: app/user-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - configMapRef:
+                name: app-config
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://postgres:5432/user_db"
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: POSTGRES_PASSWORD
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: S3_USER
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: S3_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  ports:
+    - port: 8083
+      targetPort: 8083
+  selector:
+    app: user-service
+---
+# ==============================================================================
+# NOTIFICATION SERVICE
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: app/notification-service:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: app-config
+          env:
+            - name: SPRING_MAIL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: MAIL_USERNAME
+            - name: SPRING_MAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: MAIL_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: notification-service
+---
+# ==============================================================================
+# KYC SERVICE (С Init-контейнером миграции)
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kyc-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kyc-service
+  template:
+    metadata:
+      labels:
+        app: kyc-service
+    spec:
+      initContainers:
+        - name: migrate-kyc
+          image: app/migrate-kyc:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - -url=jdbc:postgresql://postgres:5432/kyc_db
+            - -user=$(POSTGRES_USER)
+            - -password=$(POSTGRES_PASSWORD)
+            - migrate
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: POSTGRES_PASSWORD
+      containers:
+        - name: kyc-service
+          image: app/kyc-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085
+          envFrom:
+            - configMapRef:
+                name: app-config
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://postgres:5432/kyc_db"
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: POSTGRES_PASSWORD
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: S3_USER
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: S3_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kyc-service
+spec:
+  ports:
+    - port: 8085
+      targetPort: 8085
+  selector:
+    app: kyc-service
+---
+# ==============================================================================
+# API GATEWAY (С пробросом порта наружу)
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: app/api-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8010
+          envFrom:
+            - configMapRef:
+                name: app-config
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: JWT_SECRET
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+spec:
+  type: NodePort
+  ports:
+    - port: 8010
+      targetPort: 8010
+      nodePort: 30700
+  selector:
+    app: api-gateway

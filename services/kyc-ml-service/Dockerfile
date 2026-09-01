@@ -12,8 +12,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
-
 # Pre-download models so everything runs 100% offline
 RUN python -c "\
 import easyocr; \
@@ -29,6 +27,8 @@ DeepFace.represent(img_path=dummy, model_name='ArcFace', enforce_detection=False
 DeepFace.extract_faces(img_path=dummy, anti_spoofing=True, enforce_detection=False); \
 print('DeepFace models cached.') \
 "
+
+COPY . .
 
 EXPOSE 8000
 
