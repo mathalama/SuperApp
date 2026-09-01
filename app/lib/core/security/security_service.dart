@@ -5,16 +5,10 @@ import 'package:flutter/services.dart';
 class SecurityService {
   static const MethodChannel _channel = MethodChannel('dev.mathalama.app/security');
 
-  /// Enables FLAG_SECURE on Android to block screenshots and screen recording
+  /// Enables FLAG_SECURE on Android (disabled during dev testing)
   static Future<void> enableSecureMode() async {
-    if (kIsWeb) return;
-    try {
-      if (Platform.isAndroid) {
-        await _channel.invokeMethod('enableSecure');
-      }
-    } catch (e) {
-      debugPrint('[SecurityService] enableSecureMode error: $e');
-    }
+    // Disabled during dev testing to allow taking screenshots & UI inspection
+    return;
   }
 
   /// Disables FLAG_SECURE on Android
