@@ -170,17 +170,17 @@ k8s-status: ## Show Kubernetes Pods, Services, and Deployments
 # FRONTEND & MOBILE APP
 # ==============================================================================
 
-.PHONY: app-run
-app-run: ## Run Flutter mobile app in debug mode
-	@echo -e "${BLUE}==>${RESET} Running Flutter App..."
-	@(cd app && flutter run)
+.PHONY: mobile-run
+mobile-run: ## Run Flutter mobile app in debug mode
+	@echo -e "${BLUE}==>${RESET} Running Flutter Mobile App..."
+	@(cd mobile && flutter run)
 
-.PHONY: app-test
-app-test: ## Run Flutter mobile app unit tests
-	@echo -e "${BLUE}==>${RESET} Running Flutter Tests..."
-	@(cd app && flutter test)
+.PHONY: mobile-test
+mobile-test: ## Run Flutter mobile app unit tests
+	@echo -e "${BLUE}==>${RESET} Running Flutter Mobile Tests..."
+	@(cd mobile && flutter test)
 
-.PHONY: frontend-dev
-frontend-dev: ## Run KYC Web Frontend locally
-	@echo -e "${BLUE}==>${RESET} Starting Frontend dev server..."
-	@(cd frontend/kyc-web && npm install && npm run dev)
+.PHONY: web-dev
+web-dev: ## Run KYC Web Frontend locally
+	@echo -e "${BLUE}==>${RESET} Starting KYC Web dev server..."
+	@(cd web/kyc-web && npm install && npm run dev)
