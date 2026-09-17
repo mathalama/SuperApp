@@ -7,4 +7,3 @@ public record TokenValidationRequest(
     String token
 ) {
 }
-

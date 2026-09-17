@@ -16,7 +16,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState('');
-  
+
   // 6-digit OTP state
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const otpInputsRef = useRef<(HTMLInputElement | null)[]>([]);
@@ -34,7 +34,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
   const handleOtpChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
     const newDigits = [...otpDigits];
-    
+
     // Support paste of entire 6-digit code
     if (value.length > 1) {
       const pasted = value.slice(0, 6).split('');
@@ -154,7 +154,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
   return (
     <div style={{ maxWidth: '440px', margin: '16px auto 40px', width: '100%' }}>
       <div className="card fade-in" style={{ padding: '28px 20px' }}>
-        
+
         {/* Segmented Switcher */}
         {(view === 'login' || view === 'register') && (
           <div style={{

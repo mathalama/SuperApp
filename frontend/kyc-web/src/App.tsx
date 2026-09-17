@@ -110,7 +110,7 @@ export const App: React.FC = () => {
         flexDirection: 'column',
         alignItems: 'center'
       }}>
-        
+
         {/* Responsive Stepper */}
         {token && step !== 'auth' && (
           <div className="stepper-container" style={{ width: '100%' }}>
@@ -166,7 +166,7 @@ export const App: React.FC = () => {
           {step === 'submitting' && (
             <div style={{ maxWidth: '440px', margin: '40px auto', width: '100%', textAlign: 'center' }}>
               <div className="card fade-in" style={{ padding: '32px 20px' }}>
-                
+
                 <div style={{
                   width: '56px',
                   height: '56px',

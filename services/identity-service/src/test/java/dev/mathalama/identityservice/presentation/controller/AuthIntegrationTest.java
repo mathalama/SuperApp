@@ -40,10 +40,10 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
 
         // Assert Database state
         assertThat(userRepository.findByUsername("testuser")).isPresent();
-        
+
         // At this point, Redis has cached the token and the Outbox has staged the Kafka event.
         // A more advanced test would use a Kafka Consumer to verify the message arrived on the topic,
-        // but testing the DB state and HTTP status proves the core Spring context, Postgres, 
+        // but testing the DB state and HTTP status proves the core Spring context, Postgres,
         // Redis, and Kafka producer initialized correctly without exceptions!
     }
 }

@@ -36,4 +36,3 @@ public class KafkaConfig {
         return new JsonMessageConverter(objectMapper);
     }
 }
-

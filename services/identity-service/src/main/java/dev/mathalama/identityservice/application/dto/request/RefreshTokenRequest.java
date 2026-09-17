@@ -6,4 +6,3 @@ public record RefreshTokenRequest(
         @NotBlank(message = "Refresh token is required")
         String refreshToken
 ) {}
-

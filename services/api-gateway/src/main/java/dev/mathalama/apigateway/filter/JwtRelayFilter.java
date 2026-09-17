@@ -61,7 +61,7 @@ public class JwtRelayFilter implements GlobalFilter, Ordered {
         public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
                 String path = exchange.getRequest().getURI().getPath();
 
-                // Публичные эндпоинты: удаляем любые входящие заголовки авторизации от клиента
+                // Public endpoints: strip any incoming internal authorization headers from client
                 if (isPublicPath(path)) {
                         ServerHttpRequest cleanRequest = exchange.getRequest()
                                         .mutate()
@@ -75,7 +75,7 @@ public class JwtRelayFilter implements GlobalFilter, Ordered {
 
                 String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
-                // Отсутствует JWT
+                // Missing or malformed Authorization header
                 if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                         return exchange.getResponse().setComplete();
@@ -90,7 +90,7 @@ public class JwtRelayFilter implements GlobalFilter, Ordered {
                                         .parseSignedClaims(token)
                                         .getPayload();
 
-                        // Разрешены только access-токены
+                        // Enforce access token type only
                         String type = claims.get("type", String.class);
                         if (!"access".equals(type)) {
                                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
@@ -104,7 +104,7 @@ public class JwtRelayFilter implements GlobalFilter, Ordered {
                         String rolesHeader = roles != null ? String.join(",", roles) : "";
                         String tokenId = claims.getId();
 
-                        // Проверяем токен в блэклисте Redis (при логауте)
+                        // Check Redis blacklist for revoked tokens (post-logout)
                         return redisTemplate.hasKey("blacklist:access:" + tokenId)
                                         .flatMap(isBlacklisted -> {
                                                 if (Boolean.TRUE.equals(isBlacklisted)) {
@@ -113,7 +113,7 @@ public class JwtRelayFilter implements GlobalFilter, Ordered {
                                                         return exchange.getResponse().setComplete();
                                                 }
 
-                                                // Токен валиден: передаем контекст пользователя дальше
+                                                // Token is valid: relay user context downstream
                                                 ServerHttpRequest mutatedRequest = exchange.getRequest()
                                                                 .mutate()
                                                                 .header("X-User-Id", userId)

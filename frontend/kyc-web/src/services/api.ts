@@ -3,7 +3,7 @@ import { AuthResponse, KycApplicationResponse, DocumentType } from '../types';
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '';
 
 export const api = {
-  // 1. Регистрация аккаунта
+  // 1. Account registration
   async register(username: string, email: string, password: string): Promise<{ message: string }> {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
@@ -17,7 +17,7 @@ export const api = {
     return data;
   },
 
-  // 2. Подтверждение email 6-значным кодом
+  // 2. Email verification with 6-digit code
   async verifyEmail(email: string, code: string): Promise<{ message: string; verified: boolean }> {
     const res = await fetch(`${API_BASE_URL}/auth/verify-email`, {
       method: 'POST',
@@ -31,7 +31,7 @@ export const api = {
     return data;
   },
 
-  // 3. Повторная отправка кода верификации
+  // 3. Resend verification code
   async resendVerification(email: string): Promise<{ message: string }> {
     const res = await fetch(`${API_BASE_URL}/auth/resend-verification`, {
       method: 'POST',
@@ -45,7 +45,7 @@ export const api = {
     return data;
   },
 
-  // 4. Запрос на сброс пароля (отправка ссылки/токена на почту)
+  // 4. Request password reset (sends reset token to email)
   async forgotPassword(email: string): Promise<{ message: string }> {
     const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
       method: 'POST',
@@ -59,7 +59,7 @@ export const api = {
     return data;
   },
 
-  // 5. Установка нового пароля по токену
+  // 5. Reset password with token
   async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
     const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
       method: 'POST',
@@ -73,7 +73,7 @@ export const api = {
     return data;
   },
 
-  // 6. Вход и получение JWT токена
+  // 6. User login and JWT retrieval
   async login(login: string, password: string): Promise<AuthResponse> {
     const res = await fetch(`${API_BASE_URL}/auth/authenticate`, {
       method: 'POST',
@@ -87,7 +87,7 @@ export const api = {
     return data;
   },
 
-  // 7. Отправка заявки на верификацию KYC
+  // 7. Submit KYC verification application
   async submitKyc(
     token: string,
     documentType: DocumentType,
@@ -118,7 +118,7 @@ export const api = {
     return data;
   },
 
-  // 8. Получение статуса своей верификации
+  // 8. Get current KYC verification status
   async getMyKyc(token: string): Promise<KycApplicationResponse> {
     const res = await fetch(`${API_BASE_URL}/api/kyc/me`, {
       headers: {

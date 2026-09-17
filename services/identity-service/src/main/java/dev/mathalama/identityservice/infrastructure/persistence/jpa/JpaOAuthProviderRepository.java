@@ -17,10 +17,10 @@ public interface JpaOAuthProviderRepository extends JpaRepository<OAuthProvider,
     List<OAuthProvider> findByUser(User user);
     Optional<OAuthProvider> findByUserAndProviderName(User user, String providerName);
     Optional<OAuthProvider> findByUser_IdAndProviderName(UUID userId, String providerName);
-    
+
     @Query("SELECT o.providerName FROM OAuthProvider o WHERE o.user.id = :userId")
     List<String> findProviderNamesByUserId(@Param("userId") UUID userId);
-    
+
     long countByUser_Id(UUID userId);
     void deleteByUser_IdAndProviderName(UUID userId, String providerName);
 }

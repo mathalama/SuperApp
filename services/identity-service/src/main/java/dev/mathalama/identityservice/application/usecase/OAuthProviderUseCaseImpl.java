@@ -26,7 +26,7 @@ public class OAuthProviderUseCaseImpl implements OAuthProviderUseCase {
     @Override
     public Optional<User> findUserByOAuthProvider(String providerName, String providerId) {
         log.debug("Looking up user by {} provider with ID: {}", providerName, providerId);
-        
+
         return oauthProviderRepository
                 .findByProviderNameAndProviderId(providerName, providerId)
                 .map(OAuthProvider::getUser);
@@ -35,10 +35,10 @@ public class OAuthProviderUseCaseImpl implements OAuthProviderUseCase {
     @Override
     public OAuthProvider linkOAuthProvider(User user, String providerName, String providerId, String providerEmail) {
         log.info("Linking {} provider to user: {}", providerName, user.getUsername());
-        
+
         Optional<OAuthProvider> existing = oauthProviderRepository
                 .findByUserAndProviderName(user, providerName);
-        
+
         if (existing.isPresent()) {
             log.warn("Provider {} already linked to user {}", providerName, user.getUsername());
             OAuthProvider provider = existing.get();
@@ -79,13 +79,13 @@ public class OAuthProviderUseCaseImpl implements OAuthProviderUseCase {
     @Override
     public boolean unlinkOAuthProvider(UUID userId, String providerName) {
         Optional<OAuthProvider> provider = oauthProviderRepository.findByUserIdAndProviderName(userId, providerName);
-        
+
         if (provider.isPresent()) {
             oauthProviderRepository.deleteByUserIdAndProviderName(userId, providerName);
             log.info("Unlinked {} provider from user ID: {}", providerName, userId);
             return true;
         }
-        
+
         log.warn("Could not unlink {} provider - not found for user ID: {}", providerName, userId);
         return false;
     }

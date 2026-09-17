@@ -18,7 +18,7 @@
 *.iws
 *.ipr
 out/
-**/out/
+!**/src/**/out/
 
 # Visual Studio Code
 .vscode/

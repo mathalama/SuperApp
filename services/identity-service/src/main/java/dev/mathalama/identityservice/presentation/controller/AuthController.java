@@ -46,7 +46,7 @@ public class AuthController {
         String refreshTokenId = tokenStore.getTokenId(refreshToken);
         String accessToken = tokenStore.generateAccessToken(user, refreshTokenId);
 
-        // Фиксируем устройство и сессию в Redis
+        // Track device and user session in Redis
         String userAgent = httpRequest.getHeader("User-Agent");
         String ip = deviceDetector.extractClientIp(httpRequest);
 

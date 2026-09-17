@@ -143,7 +143,7 @@ spec:
     app: identity-service
 ---
 # ==============================================================================
-# USER SERVICE (С Init-контейнером миграции)
+# USER SERVICE (With Flyway migration Init-container)
 # ==============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -271,7 +271,7 @@ spec:
     app: notification-service
 ---
 # ==============================================================================
-# KYC SERVICE (С Init-контейнером миграции)
+# KYC SERVICE (With Flyway migration Init-container)
 # ==============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -352,7 +352,7 @@ spec:
     app: kyc-service
 ---
 # ==============================================================================
-# API GATEWAY (С пробросом порта наружу)
+# API GATEWAY (Public Ingress / Port Forwarding)
 # ==============================================================================
 apiVersion: apps/v1
 kind: Deployment

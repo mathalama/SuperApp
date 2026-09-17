@@ -50,25 +50,25 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         logger.info("=== OAuth2 Authentication Success ===");
-        
+
         if (authentication.getPrincipal() instanceof OAuth2User oauth2User) {
             Map<String, Object> attributes = oauth2User.getAttributes();
             String email = (String) attributes.get("email");
             String name = (String) attributes.get("name");
             String providerId = extractUniqueIdentifier(attributes);
             String providerName = getAuthProviderName(request);
-            
+
             User user = null;
             boolean isNewUser = false;
-            
+
             var existingUser = oauthProviderUseCase.findUserByOAuthProvider(providerName, providerId);
-            
+
             if (existingUser.isPresent()) {
                 user = existingUser.get();
                 logger.info("User found by {} provider ID", providerName);
             } else {
                 var userByEmail = userRepository.findByEmail(email);
-                
+
                 if (userByEmail.isPresent()) {
                     Boolean emailVerified = (Boolean) attributes.get("email_verified");
                     if (emailVerified != null && emailVerified) {
@@ -87,9 +87,9 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                     oauthProviderUseCase.linkOAuthProvider(user, providerName, providerId, email);
                 }
             }
-            
+
             oauthProviderUseCase.recordLogin(user, providerName);
-            
+
             if (isNewUser) {
                 var event = dev.mathalama.identityservice.application.dto.event.UserRegisteredEvent.create(
                         user.getId().toString(),
@@ -99,7 +99,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 );
                 eventPublisher.publishUserRegistered(event);
             }
-            
+
             String tempCode = oAuthExchangeUseCase.createExchangeCode(user.getId().toString());
 
             String redirectUrl = String.format("%s/auth/callback?code=%s",
@@ -121,11 +121,11 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         newUser.setVerifiedAt(new Date());
         newUser.setAccountState(AccountState.ACTIVE);
         newUser.setCreatedAt(new Date());
-        
+
         userRepository.save(newUser);
         return newUser;
     }
-    
+
     private String extractUniqueIdentifier(Map<String, Object> attributes) {
         if (attributes.containsKey("sub")) return String.valueOf(attributes.get("sub"));
         if (attributes.containsKey("id")) return String.valueOf(attributes.get("id"));
@@ -133,7 +133,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         if (attributes.containsKey("email")) return String.valueOf(attributes.get("email")).split("@")[0];
         return String.valueOf(System.currentTimeMillis());
     }
-    
+
     private String getAuthProviderName(HttpServletRequest request) {
         String requestUri = request.getRequestURI();
         if (requestUri.contains("google")) return "GOOGLE";

@@ -158,4 +158,3 @@ class FaceMatcher:
         except Exception as e:
             logger.error(f"Face matching error: {e}", exc_info=True)
             return 0.0, False, False, "INFERENCE_ERROR"
-

@@ -56,10 +56,10 @@ public class AuthUseCaseImpl implements AuthUseCase {
         }
 
         String encodePassword = passwordEncoder.encode(password);
-        
+
         Role userRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new IllegalStateException("Default role not found"));
-        
+
         try {
             User user = User.builder()
                     .username(username)
@@ -81,7 +81,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
             emailSender.sendVerificationEmail(email, username, verificationToken);
 
             log.info("User registered successfully: {} (email: {}). Verification email sent.", username, email);
-            
+
         } catch (DataIntegrityViolationException ex) {
             throw new UserAlreadyExistException("Username or email already exists");
         }
@@ -128,7 +128,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new UserNotFoundException("Role not found"));
-        
+
         user.getRoles().add(role);
         userRepository.save(user);
         log.info("Assigned role {} to user {}", roleName, username);

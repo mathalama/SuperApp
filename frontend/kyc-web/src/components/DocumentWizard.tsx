@@ -320,7 +320,7 @@ export const DocumentWizard: React.FC<DocumentWizardProps> = ({ onComplete, onCa
 
         {/* Main Stage with direction-aware animation */}
         <div className={`doc-wizard-stage ${direction === 'forward' ? 'doc-wizard-slide-forward' : 'doc-wizard-slide-backward'}`} key={subStep}>
-          
+
           {/* SUBSTEP 1: SELECT DOCUMENT TYPE */}
           {subStep === 'SELECT_TYPE' && (
             <div>

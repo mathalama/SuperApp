@@ -5,4 +5,3 @@ public record AuthResponse(
         String refreshToken,
         CurrentUserResponse user
 ) {}
-

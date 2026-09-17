@@ -1,37 +1,56 @@
 HELP.md
-.gradle
+.gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-### IntelliJ IDEA ###
-.idea
+### IDEs and Editors ###
+# IntelliJ IDEA
+.idea/
 *.iws
 *.iml
 *.ipr
 out/
-!**/src/main/**/out/
-!**/src/test/**/out/
+!**/src/**/out/
 
-### NetBeans ###
+# Eclipse / STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
 
-### VS Code ###
+# VS Code
 .vscode/
+
+# Build Outputs
+bin/
+!**/src/**/bin/
+
+### Local Configuration & Secrets ###
+.env
+.env.local
+.env.*
+*.log
+.aider*
+
+### Compiled Java Classes & Artifacts ###
+*.class
+*.jar
+!**/gradle/wrapper/gradle-wrapper.jar
+*.war
+*.ear
+
+### OS Files ###
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db

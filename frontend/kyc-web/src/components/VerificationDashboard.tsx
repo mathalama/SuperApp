@@ -70,7 +70,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
 
   return (
     <div className="fade-in" style={{ maxWidth: '640px', margin: '0 auto', width: '100%' }}>
-      
+
       {/* Status Hero Banner */}
       <div className="card" style={{
         padding: '24px 18px',
@@ -102,7 +102,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
         gap: '8px',
         marginBottom: '14px'
       }}>
-        
+
         {/* Liveness Score */}
         <div className="card stat-card">
           <div className="stat-label">

@@ -20,4 +20,3 @@ public record TokenValidationResponse(
         return new TokenValidationResponse(false, null, null, null, Set.of(), message);
     }
 }
-

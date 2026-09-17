@@ -266,4 +266,3 @@ class OcrMrzReader:
         except Exception as e:
             logger.error(f"OCR processing failed: {e}", exc_info=True)
             return "ABSENT", "UNKNOWN", {}, json.dumps({"error": str(e)})
-

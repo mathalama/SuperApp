@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: postgres-init-script
 data:
-  # Если у вас есть готовый init-databases.sql, его содержимое можно вставить сюда:
+  # PostgreSQL initialization script to create microservice databases:
   init-databases.sql: |
     CREATE DATABASE identity_db;
     CREATE DATABASE user_db;

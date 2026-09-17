@@ -3,38 +3,38 @@ info:
   title: Identity Service API
   description: |
     Authentication and authorization microservice with OAuth2 provider linking.
-    
+
     Issues JWT access & refresh tokens (HMAC-SHA256) for stateless API authentication.
     Supports OAuth2 Authorization Server (RSA-256), OAuth2 Login (Google, GitHub), and
     unified account linking — allowing a single user account with multiple authentication methods.
-    
+
     ## Authentication Flow
-    
+
     1. Register via `POST /auth/register`
     2. Verify email via `POST /auth/verify-email`
     3. Authenticate via `POST /auth/authenticate` to get access + refresh tokens
     4. Send access token in header: `Authorization: Bearer <accessToken>`
     5. When access token expires, refresh via `POST /auth/refresh`
     6. Logout via `POST /auth/logout` to revoke all tokens
-    
+
     ## User Profile & OAuth Providers
-    
+
     - Get profile: `GET /auth/me`
     - List linked providers: `GET /auth/me/providers`
     - Unlink provider: `DELETE /auth/me/providers/{provider}`
-    
+
     ## Forgot Password Flow
-    
+
     1. Request reset email via `POST /auth/forgot-password`
     2. Set new password via `POST /auth/reset-forgotten-password`
-    
+
     ## Token Validation (Service-to-Service)
-    
+
     Other microservices can validate JWT tokens via `POST /auth/validate`
     to verify tokens and retrieve user information without parsing JWT themselves.
-    
+
     ## Token Lifecycle
-    
+
     | Token | TTL | Storage | Revocation |
     |-------|-----|---------|------------|
     | Access | ~15 min (`JWT_EXPIRATION`) | Client only | Blacklisted in Redis on logout |
@@ -71,7 +71,7 @@ paths:
       description: |
         Creates user with `ROLE_USER` role and `PENDING_VERIFICATION` state.
         Username and email must be unique.
-        
+
         User receives verification email with token link.
       operationId: register
       requestBody:
@@ -119,7 +119,7 @@ paths:
       summary: Verify email address
       description: |
         Validates email verification token and activates user account.
-        
+
         Token expires after 30 minutes and is one-time use only.
       operationId: verifyEmail
       requestBody:
@@ -166,7 +166,7 @@ paths:
       summary: Resend verification email
       description: |
         Sends new verification email to user.
-        
+
         Rate limited to once per 60 seconds to prevent abuse.
       operationId: resendVerification
       requestBody:
@@ -213,15 +213,15 @@ paths:
       summary: Authenticate and get token pair
       description: |
         Authenticates user with username/email and password.
-        
+
         Returns a **short-lived access token** and a **long-lived refresh token**.
-        
+
         - **Access token** (`type: access`): contains user ID and roles. Send in `Authorization: Bearer` header for API requests.
         - **Refresh token** (`type: refresh`): used only at `POST /auth/refresh` to obtain a new token pair.
-        
+
         The refresh token `jti` is stored in Redis for validation and rotation.
-        
-        **Access token TTL:** `JWT_EXPIRATION` (milliseconds).  
+
+        **Access token TTL:** `JWT_EXPIRATION` (milliseconds).
         **Refresh token TTL:** `JWT_REFRESH_EXPIRATION` (default 7 days).
       operationId: authenticate
       requestBody:
@@ -277,13 +277,13 @@ paths:
       summary: Refresh token pair
       description: |
         Exchanges a valid refresh token for a **new access + refresh token pair**.
-        
+
         **Refresh Token Rotation:** the old refresh token is immediately revoked in Redis
         and a new one is issued. This limits the window of a stolen refresh token.
-        
+
         If the submitted refresh token has already been used (replay/reuse attack),
         **all tokens for that user are revoked** and the request is rejected.
-        
+
         This endpoint is **public** (no `Authorization` header needed) — the refresh token
         in the request body is sufficient for authentication.
       operationId: refreshToken
@@ -331,14 +331,14 @@ paths:
       summary: Logout and revoke tokens
       description: |
         Logs the user out by performing two actions:
-        
+
         1. **Blacklists the current access token** in Redis (`blacklist:access:{jti}`)
            with TTL equal to the token's remaining lifetime. Any subsequent request
            with this access token will be rejected by `JwtAuthenticationFilter`.
-        
+
         2. **Deletes the refresh token** from Redis (`refresh:token:{userId}`),
            preventing future token refreshes.
-        
+
         Requires a valid access token in the `Authorization` header.
       operationId: logout
       security:
@@ -367,7 +367,7 @@ paths:
       summary: Reset password (authenticated)
       description: |
         Changes the user's password. Requires the current (old) password for verification.
-        
+
         Requires a valid access token in the `Authorization` header.
       operationId: resetPassword
       security:
@@ -411,11 +411,11 @@ paths:
       summary: Request password reset email
       description: |
         Sends a password-reset email containing a time-limited token.
-        
+
         - The token is **SHA-256 hashed** and stored in Redis with a **30-minute TTL**.
         - Rate-limited to **one request per 60 seconds** per user.
         - Always returns `200 OK` regardless of whether the email exists (prevents enumeration).
-        
+
         This endpoint is **public** — no `Authorization` header required.
       operationId: forgotPassword
       requestBody:
@@ -453,10 +453,10 @@ paths:
       summary: Set new password via reset token
       description: |
         Validates the password-reset token from the email link and sets a new password.
-        
+
         - Token is one-time use and deleted after success.
         - All refresh tokens for the user are revoked (forces re-login).
-        
+
         This endpoint is **public** — no `Authorization` header required.
       operationId: resetForgottenPassword
       requestBody:
@@ -502,7 +502,7 @@ paths:
       description: |
         Returns detailed information about the currently authenticated user,
         including ID, username, email, verification status, account state, roles, and creation time.
-        
+
         Requires a valid access token in the `Authorization` header.
       operationId: getCurrentUser
       security:
@@ -537,10 +537,10 @@ paths:
       summary: Get linked OAuth providers
       description: |
         Returns a list of all OAuth providers linked to the current user account.
-        
+
         Includes provider name, associated email, link timestamp, and last login time.
         Useful for displaying "Connected Accounts" in user settings.
-        
+
         Requires a valid access token in the `Authorization` header.
       operationId: getLinkedProviders
       security:
@@ -579,10 +579,10 @@ paths:
       summary: Unlink OAuth provider
       description: |
         Removes a specific OAuth provider from the current user's account.
-        
+
         A user must maintain at least one authentication method, so the system
         prevents unlinking the last remaining provider to avoid account lockout.
-        
+
         Requires a valid access token in the `Authorization` header.
       operationId: unlinkProvider
       security:
@@ -630,14 +630,14 @@ paths:
       summary: Validate JWT token (inter-service endpoint)
       description: |
         Validates a JWT access token and returns the associated user information.
-        
+
         This is a service-to-service endpoint used by other microservices (Account Service,
         Transfer Service, etc.) to verify tokens and retrieve user details for authorization
         decisions without duplicating JWT parsing logic.
-        
+
         Handles token format variations (with or without "Bearer " prefix).
         Always returns HTTP 200 OK with a success/failure flag in the response body.
-        
+
         This endpoint is **public** — useful for inter-service communication.
       operationId: validateToken
       requestBody:
@@ -704,9 +704,9 @@ components:
       bearerFormat: JWT
       description: |
         JWT **access token** obtained from `POST /auth/authenticate` or `POST /auth/refresh`.
-        
+
         Send in header: `Authorization: Bearer <accessToken>`
-        
+
         The access token contains `"type": "access"` — refresh tokens are rejected by API endpoints.
 
   schemas:

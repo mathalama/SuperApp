@@ -7,6 +7,6 @@ CREATE TABLE outbox_events (
     processed BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CREATE INDEX idx_outbox_events_unprocessed 
-ON outbox_events (created_at) 
+CREATE INDEX idx_outbox_events_unprocessed
+ON outbox_events (created_at)
 WHERE processed = FALSE;

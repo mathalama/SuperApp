@@ -66,11 +66,11 @@ public class TokenUseCaseImpl implements TokenUseCase {
             String userId = tokenStore.getUserIdFromToken(token);
             User user = userRepository.findById(UUID.fromString(userId))
                     .orElseThrow(() -> new UserNotFoundException("User not found"));
-                    
+
             if (user.getAccountState() == dev.mathalama.identityservice.domain.enums.AccountState.DELETED || user.getAccountState() == dev.mathalama.identityservice.domain.enums.AccountState.DISABLED) {
                 return TokenValidationResponse.failure("User account is inactive");
             }
-            
+
             return TokenValidationResponse.success(user.getId(), user.getUsername(), user.getEmail(), user.getRoles().stream().map(r -> r.getName()).collect(java.util.stream.Collectors.toSet()));
         } catch (Exception ex) {
             return TokenValidationResponse.failure("Failed to validate user: " + ex.getMessage());

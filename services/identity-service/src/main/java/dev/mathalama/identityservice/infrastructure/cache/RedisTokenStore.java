@@ -345,11 +345,11 @@ public class RedisTokenStore implements TokenStore {
                 deadSessionIds.add(sessionId);
             }
         }
-        // Чистим старые ID сессий, у которых истек TTL в Redis
+        // Clean up expired session IDs from Redis set
         if (!deadSessionIds.isEmpty()) {
             deadSessionIds.forEach(id -> redisTemplate.opsForSet().remove(userSetKey, id));
         }
-        // Сортируем: свежие сессии сверху
+        // Sort sessions: most recently active first
         sessions.sort((a, b) -> Long.compare(b.getLastActiveAt(), a.getLastActiveAt()));
         return sessions;
     }

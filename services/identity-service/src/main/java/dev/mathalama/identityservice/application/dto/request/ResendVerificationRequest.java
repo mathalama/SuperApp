@@ -8,4 +8,3 @@ public record ResendVerificationRequest(
         @Email(message = "Invalid email format")
         String email
 ) {}
-

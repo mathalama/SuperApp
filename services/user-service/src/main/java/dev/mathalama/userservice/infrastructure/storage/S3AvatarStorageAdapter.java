@@ -29,7 +29,7 @@ public class S3AvatarStorageAdapter implements AvatarStoragePort {
     @Value("${s3.public-url}")
     private String publicUrl;
 
-    private static final int MAX_DIMENSION = 4096; // Максимум 4K разрешение
+    private static final int MAX_DIMENSION = 4096; // Maximum 4K resolution
 
     @Override
     public String uploadAvatar(UUID userId, MultipartFile file) {
@@ -37,10 +37,10 @@ public class S3AvatarStorageAdapter implements AvatarStoragePort {
             throw new IllegalArgumentException("Avatar file cannot be empty");
         }
 
-        // 1. Проверяем реальный тип файла по сигнатуре (Magic Bytes)
+        // 1. Verify actual file type by signature (Magic Bytes)
         String detectedFormat = detectAndValidateImageFormat(file);
 
-        // 2. Проверяем валидность картинки и её разрешение (защита от Pixel Flood)
+        // 2. Validate image structure and dimensions (Pixel Flood protection)
         validateImageDimensions(file);
 
         String extension = "." + detectedFormat;
@@ -88,7 +88,7 @@ public class S3AvatarStorageAdapter implements AvatarStoragePort {
     }
 
     /**
-     * Проверка первых байт файла (Magic Numbers)
+     * Verify file header bytes (Magic Numbers)
      */
     private String detectAndValidateImageFormat(MultipartFile file) {
         try (InputStream is = new BufferedInputStream(file.getInputStream())) {
@@ -124,7 +124,7 @@ public class S3AvatarStorageAdapter implements AvatarStoragePort {
     }
 
     /**
-     * Защита от Decompression Bomb (Pixel Flood)
+     * Decompression bomb / Pixel Flood protection
      */
     private void validateImageDimensions(MultipartFile file) {
         try (InputStream is = file.getInputStream()) {

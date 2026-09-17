@@ -15,13 +15,13 @@ public class IdempotencyService {
     private final StringRedisTemplate redisTemplate;
 
     private static final String KEY_PREFIX = "notification:processed:event:";
-    private static final Duration TTL = Duration.ofDays(1); // Защита от дублей на 24 часа
+    private static final Duration TTL = Duration.ofDays(1); // 24-hour deduplication window
 
     /**
-     * Атомарная проверка (SETNX) в Redis:
-     * 
-     * @return true - если сообщение новое и успешно зафиксировано.
-     *         false - если сообщение уже обрабатывалось ранее (дубликат).
+     * Atomic check (SETNX) in Redis:
+     *
+     * @return true if event is new and successfully recorded.
+     *         false if event was already processed previously (duplicate).
      */
     public boolean markIfNew(String eventId) {
         if (eventId == null || eventId.isBlank()) {

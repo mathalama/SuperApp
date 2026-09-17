@@ -42,14 +42,14 @@ public class KycUseCaseImpl implements KycUseCase {
     public KycApplicationResponse submitApplication(UUID userId, SubmitKycRequest request) {
         log.info("Processing KYC submission for userId: {}", userId);
 
-        // 1. Сохраняем исходники в приватный S3 MinIO
+        // 1. Upload original files to private MinIO S3 bucket
         String frontKey = storagePort.uploadDocument(userId, request.getDocumentFront(), "front");
         String backKey = request.getDocumentBack() != null
                 ? storagePort.uploadDocument(userId, request.getDocumentBack(), "back")
                 : null;
         String selfieKey = storagePort.uploadDocument(userId, request.getSelfie(), "selfie");
 
-        // 2. Создаем черновик заявки в статусе IN_PROGRESS
+        // 2. Create application draft with IN_PROGRESS status
         KycApplication application = KycApplication.builder()
                 .userId(userId)
                 .documentType(request.getDocumentType())
@@ -62,7 +62,7 @@ public class KycUseCaseImpl implements KycUseCase {
         application = repositoryPort.save(application);
         eventPublisherPort.publishKycStatusChanged(userId, application.getId(), KycStatus.IN_PROGRESS, null);
 
-        // 3. Вызываем ML-инференс сервис (OCR + Liveness + Face Match)
+        // 3. Call ML inference service (OCR + Liveness + Face Match)
         try {
             byte[] frontBytes = request.getDocumentFront().getBytes();
             byte[] backBytes = request.getDocumentBack() != null ? request.getDocumentBack().getBytes() : null;
@@ -77,7 +77,7 @@ public class KycUseCaseImpl implements KycUseCase {
             application.setRejectionReason("Failed to process image files.");
         } catch (Exception e) {
             log.error("ML Inference error for userId: {}", userId, e);
-            // При сбое ML отправляем на ручную проверку, чтобы заявка не потерялась
+            // Route to manual review on ML failure so application is preserved
             application.setStatus(KycStatus.MANUAL_REVIEW);
             application.setRejectionReason("ML verification service temporarily unavailable: " + e.getMessage());
         }
@@ -105,9 +105,9 @@ public class KycUseCaseImpl implements KycUseCase {
             app.setExtractedNationality(ml.getExtractedData().getNationality());
         }
 
-        // Многоуровневый Decision Engine
+        // Multi-tier Decision Engine
 
-        // 1. Проверка системных кодов качества изображений (освещение, разрешение, мульти-лица)
+        // 1. Image quality validation (lighting, resolution, multiple faces)
         String err = ml.getErrorCode();
         if ("POOR_LIGHTING".equals(err)) {
             app.setStatus(KycStatus.REJECTED);
@@ -130,28 +130,28 @@ public class KycUseCaseImpl implements KycUseCase {
             return;
         }
 
-        // 2. Проверка обнаружения лица в документе
+        // 2. Face detection in identity document
         if (Boolean.FALSE.equals(ml.getFaceDetectedInDoc()) || "NO_FACE_IN_DOCUMENT".equals(err)) {
             app.setStatus(KycStatus.REJECTED);
             app.setRejectionReason("No face detected in document photo. Please upload a clear photo of your ID.");
             return;
         }
 
-        // 3. Проверка обнаружения лица в селфи
+        // 3. Face detection in selfie
         if (Boolean.FALSE.equals(ml.getFaceDetectedInSelfie()) || "NO_FACE_IN_SELFIE".equals(err)) {
             app.setStatus(KycStatus.REJECTED);
             app.setRejectionReason("No face detected in selfie. Please ensure your face is clearly visible.");
             return;
         }
 
-        // 4. Проверка фронтального ракурса (Head Pose)
+        // 4. Head pose validation (frontal angle)
         if (Boolean.FALSE.equals(ml.getHeadPoseValid()) || "HEAD_POSE_ROTATED".equals(err)) {
             app.setStatus(KycStatus.REJECTED);
             app.setRejectionReason("Face turned sideways. Please look straight into the camera.");
             return;
         }
 
-        // 5. Проверка срока действия документа (Document Expiry Validation)
+        // 5. Document expiration check (Document Expiry Validation)
         String expStatus = ml.getExpiryStatus() != null ? ml.getExpiryStatus() : "UNKNOWN";
         java.time.LocalDate expDate = ml.getExtractedData() != null ? ml.getExtractedData().getExpiryDate() : null;
 
@@ -161,7 +161,7 @@ public class KycUseCaseImpl implements KycUseCase {
             return;
         }
 
-        // 6. Проверка Anti-spoofing (Liveness)
+        // 6. Anti-spoofing validation (Liveness)
         boolean isLive = ml.getLivenessScore() != null && ml.getLivenessScore() >= livenessThreshold;
         if (!isLive) {
             app.setStatus(KycStatus.REJECTED);
@@ -169,7 +169,7 @@ public class KycUseCaseImpl implements KycUseCase {
             return;
         }
 
-        // 7. Проверка сходства лиц (ArcFace), Grace Period и MRZ статуса
+        // 7. Face similarity (ArcFace), Grace Period, and MRZ validation
         double similarity = ml.getSimilarityScore() != null ? ml.getSimilarityScore() : 0.0;
         String mrzStatus = ml.getMrzStatus() != null ? ml.getMrzStatus() : (Boolean.TRUE.equals(ml.getMrzValid()) ? "VALID" : "ABSENT");
 

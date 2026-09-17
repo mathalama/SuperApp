@@ -12,7 +12,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserSession implements Serializable {
-    private String sessionId; // jti токена
+    private String sessionId; // JWT jti claim
     private String userId;
     private String ipAddress;
     private String userAgent;

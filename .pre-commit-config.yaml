@@ -1,0 +1,57 @@
+# =========================================================================
+# SuperApp Monorepo - Pre-Commit Hook Configuration
+# =========================================================================
+# Setup hooks for this repository:
+#   pre-commit install --hook-type pre-commit --hook-type pre-push
+#
+# Run checks manually across all files:
+#   pre-commit run --all-files
+#
+# Run pre-push checks manually:
+#   pre-commit run --hook-stage pre-push --all-files
+#
+# Bypass checks when necessary:
+#   git commit -m "..." --no-verify
+#   git push --no-verify
+# =========================================================================
+
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  # 1. Codebase hygiene & format validation (runs on every commit)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # Strip trailing whitespace
+      - id: trailing-whitespace
+      # Ensure newline at the end of files
+      - id: end-of-file-fixer
+      # Validate YAML syntax (Kubernetes manifests, Docker Compose, Spring Boot configs)
+      - id: check-yaml
+        args: ["--unsafe"]
+      # Validate JSON syntax
+      - id: check-json
+      # Prevent committing files larger than 1MB
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      # Prevent accidental commits of private keys
+      - id: detect-private-key
+
+  # 2. Secret & credential leak detection (runs on every commit)
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+        args: ["--verbose", "--config=.gitleaks.toml"]
+
+  # 3. Java microservices test runner (runs on git push)
+  # Runs tests on `git push` instead of every commit, keeping commits fast
+  # while preventing broken builds from leaving the developer's machine.
+  - repo: local
+    hooks:
+      - id: java-tests
+        name: Run Java microservices tests
+        entry: python -c "import os, subprocess, sys; services = [os.path.join('services', s) for s in sorted(os.listdir('services')) if os.path.isfile(os.path.join('services', s, 'build.gradle'))]; failures = [s for s in services if subprocess.call(['cmd.exe', '/c', 'gradlew.bat', 'test'] if os.name == 'nt' else ['./gradlew', 'test'], cwd=s) != 0]; sys.exit(1 if failures else 0)"
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
