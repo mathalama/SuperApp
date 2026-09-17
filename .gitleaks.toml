@@ -90,3 +90,13 @@ useDefault = true
 # ─────────────────────────────────────────────────────────────────────────────
 #  ALLOWLISTS
 # ─────────────────────────────────────────────────────────────────────────────
+
+[allowlist]
+description = "Sample dummy JWT tokens in API documentation and README"
+paths = [
+    '''services/identity-service/docs/swagger\.yml''',
+    '''services/identity-service/README\.md'''
+]
+regexes = [
+    '''eyJhbGciOiJIUzI1NiJ9'''
+]
