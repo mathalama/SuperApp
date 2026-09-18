@@ -50,20 +50,20 @@ class FaceMatcher:
             if len(faces) == 1:
                 fx, fy, fw, fh = faces[0]
             else:
-                # Fallback to DeepFace extract_faces
-                df_faces = DeepFace.extract_faces(img_path=img_bgr, enforce_detection=False)
-                high_conf = [f for f in df_faces if f.get("confidence", 0.0) >= 0.35]
+                # Fallback to DeepFace extract_faces with strict face verification
+                try:
+                    df_faces = DeepFace.extract_faces(img_path=img_bgr, enforce_detection=True)
+                except Exception:
+                    return None, False
+
+                high_conf = [f for f in df_faces if f.get("confidence", 0.0) >= 0.60]
                 if len(high_conf) > 1:
-                    logger.warning(f"Multiple faces detected in document via DeepFace: {len(high_conf)}")
+                    logger.warning(f"Multiple faces detected in image via DeepFace: {len(high_conf)}")
                     return None, True
 
-                if df_faces and len(df_faces) > 0:
-                    conf = df_faces[0].get("confidence", 0.0)
-                    if conf >= 0.25:
-                        fa = df_faces[0]["facial_area"]
-                        fx, fy, fw, fh = fa["x"], fa["y"], fa["w"], fa["h"]
-                    else:
-                        return None, False
+                if high_conf:
+                    fa = high_conf[0]["facial_area"]
+                    fx, fy, fw, fh = fa["x"], fa["y"], fa["w"], fa["h"]
                 else:
                     return None, False
 
@@ -112,33 +112,31 @@ class FaceMatcher:
             # 1. Isolate and crop face from the document
             doc_face_crop, doc_multi_faces = self.extract_face_crop(doc_img)
             if doc_multi_faces:
-                return 0.0, False, True, "MULTIPLE_FACES_IN_DOCUMENT"
+                return 0.0, False, False, "MULTIPLE_FACES_IN_DOCUMENT"
 
-            face_detected_in_doc = doc_face_crop is not None
-            img1_to_compare = doc_face_crop if face_detected_in_doc else doc_img
+            if doc_face_crop is None:
+                logger.warning("No face detected in document image")
+                return 0.0, False, False, "NO_FACE_IN_DOCUMENT"
 
             # 2. Check face in selfie
             selfie_face_crop, selfie_multi_faces = self.extract_face_crop(selfie_img, margin=0.15)
             if selfie_multi_faces:
-                return 0.0, face_detected_in_doc, False, "MULTIPLE_FACES_DETECTED"
+                return 0.0, True, False, "MULTIPLE_FACES_DETECTED"
 
-            face_detected_in_selfie = selfie_face_crop is not None
-            img2_to_compare = selfie_face_crop if face_detected_in_selfie else selfie_img
-
-            if not face_detected_in_doc:
-                logger.warning("No face detected in document image")
-                return 0.0, False, face_detected_in_selfie, "NO_FACE_IN_DOCUMENT"
-
-            if not face_detected_in_selfie:
+            if selfie_face_crop is None:
                 logger.warning("No face detected in selfie image")
-                return 0.0, face_detected_in_doc, False, "NO_FACE_IN_SELFIE"
+                return 0.0, True, False, "NO_FACE_IN_SELFIE"
 
-            result = DeepFace.verify(
-                img1_path=img1_to_compare,
-                img2_path=img2_to_compare,
-                model_name="ArcFace",
-                enforce_detection=False
-            )
+            try:
+                result = DeepFace.verify(
+                    img1_path=doc_face_crop,
+                    img2_path=selfie_face_crop,
+                    model_name="ArcFace",
+                    enforce_detection=True
+                )
+            except ValueError as ve:
+                logger.warning(f"DeepFace face detection rejected: {ve}")
+                return 0.0, True, True, "FACE_DETECTION_REJECTED"
 
             # DeepFace returns cosine distance (0 = identical, 1 = different)
             distance = result.get("distance", 1.0)

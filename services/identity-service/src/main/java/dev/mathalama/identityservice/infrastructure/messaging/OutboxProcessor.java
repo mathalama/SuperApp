@@ -23,6 +23,30 @@ public class OutboxProcessor {
     private final ObjectMapper objectMapper;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean processNextEvent() {
+        java.util.Optional<OutboxEvent> optionalEvent = outboxEventRepository.findNextUnprocessedEventForUpdate();
+        if (optionalEvent.isEmpty()) {
+            return false;
+        }
+        OutboxEvent event = optionalEvent.get();
+        try {
+            Class<?> eventClass = getEventClass(event.getEventType());
+            Object payload = objectMapper.readValue(event.getPayload(), eventClass);
+            String topic = EventType.valueOf(event.getEventType()).getTopic();
+
+            kafkaTemplate.send(topic, event.getAggregateId(), payload).get();
+
+            event.setProcessed(true);
+            outboxEventRepository.save(event);
+            log.debug("Successfully relayed outbox event {} of type {} to topic {}", event.getId(), event.getEventType(), topic);
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to process event {}: {}", event.getId(), e.getMessage());
+            throw new RuntimeException("Failed to process event " + event.getId(), e);
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processEvent(OutboxEvent event) {
         try {
             Class<?> eventClass = getEventClass(event.getEventType());

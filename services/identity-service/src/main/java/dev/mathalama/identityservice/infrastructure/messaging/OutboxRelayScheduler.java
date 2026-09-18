@@ -1,46 +1,41 @@
 package dev.mathalama.identityservice.infrastructure.messaging;
 
-import dev.mathalama.identityservice.application.dto.event.EventType;
-import dev.mathalama.identityservice.infrastructure.persistence.outbox.OutboxEvent;
-import dev.mathalama.identityservice.infrastructure.persistence.outbox.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
-
-import java.util.List;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class OutboxRelayScheduler {
 
-    private final OutboxEventRepository outboxRepository;
-    private final KafkaTemplate<Object, Object> kafkaTemplate;
-    private final ObjectMapper objectMapper;
     private final OutboxProcessor outboxProcessor;
+
+    @Value("${app.outbox.batch-size:50}")
+    private int batchSize = 50;
 
     @Scheduled(fixedDelayString = "${app.outbox.fixed-delay}")
     public void relayEventsToKafka() {
-        List<OutboxEvent> events = outboxRepository.findByProcessedFalseOrderByCreatedAtAsc();
-
         int consecutiveErrors = 0;
+        int processedCount = 0;
 
-        for (OutboxEvent event : events) {
+        while (processedCount < batchSize) {
             try {
-                outboxProcessor.processEvent(event);
+                boolean hasEvent = outboxProcessor.processNextEvent();
+                if (!hasEvent) {
+                    break;
+                }
+                processedCount++;
                 consecutiveErrors = 0;
             } catch (Exception e) {
                 consecutiveErrors++;
-                log.error("Failed to relay event {}: {}", event.getId(), e.getMessage());
-            }
-            if (consecutiveErrors >= 5) {
-                log.warn("Stopped batch processing after 5 consecutive errors. Infrastructure might be down.");
-                break;
+                log.error("Failed to relay outbox event: {}", e.getMessage());
+                if (consecutiveErrors >= 5) {
+                    log.warn("Stopped outbox processing after 5 consecutive errors. Infrastructure might be down.");
+                    break;
+                }
             }
         }
     }
