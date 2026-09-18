@@ -1,0 +1,20 @@
+services:
+  kyc-web:
+    build:
+      context: ../../web/kyc
+      dockerfile: ../docker/Dockerfile.web
+    container_name: kyc-web
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../../.env
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - super-app-network
+
+networks:
+  super-app-network:
+    name: super-app-network
+    driver: bridge

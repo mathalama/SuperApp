@@ -48,7 +48,7 @@ check-env: ## Verify that .env file exists
 # ==============================================================================
 
 .PHONY: up
-up: check-env ## Build and start all services in detached mode
+up: check-env ## Build and start all components (infra, migrations, services, web)
 	@echo -e "${BLUE}==>${RESET} Starting all services..."
 	docker compose up -d --build
 
@@ -75,20 +75,41 @@ logs: ## Follow logs for all services (or use s=<service-name>)
 .PHONY: infra-up
 infra-up: check-env ## Start only infrastructure (Postgres, Redis, Kafka, MinIO, Zipkin)
 	@echo -e "${BLUE}==>${RESET} Starting backing infrastructure..."
-	docker compose up -d postgres redis kafka minio zipkin
+	docker compose -f infra/compose/docker-compose.infra.yml up -d
 
 .PHONY: infra-down
 infra-down: ## Stop backing infrastructure
 	@echo -e "${BLUE}==>${RESET} Stopping backing infrastructure..."
-	docker compose stop postgres redis kafka minio zipkin
+	docker compose -f infra/compose/docker-compose.infra.yml down
+
+.PHONY: services-up
+services-up: check-env ## Start only backend microservices
+	@echo -e "${BLUE}==>${RESET} Starting backend microservices..."
+	docker compose -f infra/compose/docker-compose.services.yml up -d --build
+
+.PHONY: services-down
+services-down: ## Stop backend microservices
+	@echo -e "${BLUE}==>${RESET} Stopping backend microservices..."
+	docker compose -f infra/compose/docker-compose.services.yml stop
 
 .PHONY: migrate
 migrate: check-env ## Run Flyway database migrations for all services
 	@echo -e "${BLUE}==>${RESET} Running database migrations..."
-	docker compose run --rm migrate-identity
-	docker compose run --rm migrate-user
-	docker compose run --rm migrate-kyc
+	docker compose -f infra/compose/docker-compose.migrate.yml run --rm migrate-identity
+	docker compose -f infra/compose/docker-compose.migrate.yml run --rm migrate-user
+	docker compose -f infra/compose/docker-compose.migrate.yml run --rm migrate-kyc
 	@echo -e "${GREEN}✓ All database migrations applied.${RESET}"
+
+.PHONY: web-up
+web-up: check-env ## Start KYC Web Frontend in Docker
+	@echo -e "${BLUE}==>${RESET} Starting KYC Web container..."
+	docker compose -f infra/compose/docker-compose.web.yml up -d --build
+
+.PHONY: web-down
+web-down: ## Stop KYC Web Frontend container
+	@echo -e "${BLUE}==>${RESET} Stopping KYC Web container..."
+	docker compose -f infra/compose/docker-compose.web.yml down
+
 
 # ==============================================================================
 # JAVA MICROSERVICES (BUILD, TEST, CLEAN)
@@ -183,4 +204,10 @@ mobile-test: ## Run Flutter mobile app unit tests
 .PHONY: web-dev
 web-dev: ## Run KYC Web Frontend locally
 	@echo -e "${BLUE}==>${RESET} Starting KYC Web dev server..."
-	@(cd web/kyc-web && npm install && npm run dev)
+	@(cd web/kyc && npm install && npm run dev)
+
+.PHONY: web-build
+web-build: ## Build KYC Web Frontend production bundle
+	@echo -e "${BLUE}==>${RESET} Building KYC Web Frontend..."
+	@(cd web/kyc && npm install && npm run build)
+	@echo -e "${GREEN}✓ Web frontend built successfully.${RESET}"

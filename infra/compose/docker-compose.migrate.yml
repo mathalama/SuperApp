@@ -1,0 +1,65 @@
+services:
+  # IDENTITY MIGRATION
+  migrate-identity:
+    build:
+      context: ../../services/identity-service
+      dockerfile: ../docker/Dockerfile.flyway
+    container_name: migrate-identity
+    env_file:
+      - ../../.env
+    command:
+      - -url=jdbc:postgresql://postgres:5432/${IDENTITY_DB}
+      - -user=${POSTGRES_USER}
+      - -password=${POSTGRES_PASSWORD}
+      - migrate
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - super-app-network
+
+  # USER MIGRATION
+  migrate-user:
+    build:
+      context: ../../services/user-service
+      dockerfile: ../docker/Dockerfile.flyway
+    container_name: migrate-user
+    env_file:
+      - ../../.env
+    command:
+      - -url=jdbc:postgresql://postgres:5432/${USER_DB}
+      - -user=${POSTGRES_USER}
+      - -password=${POSTGRES_PASSWORD}
+      - migrate
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - super-app-network
+
+  # KYC MIGRATION
+  migrate-kyc:
+    build:
+      context: ../../services/kyc-service
+      dockerfile: ../docker/Dockerfile.flyway
+    container_name: migrate-kyc
+    env_file:
+      - ../../.env
+    command:
+      - -url=jdbc:postgresql://postgres:5432/${KYC_DB}
+      - -user=${POSTGRES_USER}
+      - -password=${POSTGRES_PASSWORD}
+      - migrate
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - super-app-network
+
+networks:
+  super-app-network:
+    name: super-app-network
+    driver: bridge
