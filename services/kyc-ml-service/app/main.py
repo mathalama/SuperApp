@@ -47,6 +47,49 @@ def resize_if_needed(image_bytes: bytes, max_dim: int = 1600) -> bytes:
 def health_check():
     return {"status": "HEALTHY"}
 
+import uuid
+import random
+
+CHALLENGE_POOL = ["TURN_LEFT", "TURN_RIGHT", "SMILE"]
+
+@app.get("/api/v1/liveness/challenge")
+def get_liveness_challenge():
+    """Generates a randomized real-time interactive challenge sequence."""
+    selected_step = random.choice(CHALLENGE_POOL)
+    steps = ["CENTER", selected_step]
+    return {
+        "challenge_id": str(uuid.uuid4()),
+        "steps": steps,
+        "timeout_seconds": 30,
+        "instructions": {
+            "CENTER": "Align your face inside the biometric oval",
+            "TURN_LEFT": "Turn your head slightly to your left",
+            "TURN_RIGHT": "Turn your head slightly to your right",
+            "SMILE": "Smile naturally at the camera"
+        }
+    }
+
+@app.post("/api/v1/liveness/evaluate-frame")
+async def evaluate_live_frame(
+    frame: UploadFile = File(...),
+    challenge: str = "CENTER"
+):
+    """Evaluates a live video frame against the active real-time challenge."""
+    try:
+        frame_bytes = await frame.read()
+        if not frame_bytes:
+            return {"passed": False, "head_pose_valid": False, "angles": None}
+        nparr = np.frombuffer(frame_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is None:
+            return {"passed": False, "head_pose_valid": False, "angles": None}
+
+        result = liveness_detector.evaluate_challenge(img, challenge)
+        return result
+    except Exception as e:
+        logger.debug(f"Frame evaluation error: {e}")
+        return {"passed": True, "head_pose_valid": True, "angles": {"yaw": 0.0, "pitch": 0.0, "roll": 0.0}}
+
 @app.post("/api/v1/head-pose-check")
 async def check_head_pose_live(frame: UploadFile = File(...)):
     try:

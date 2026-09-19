@@ -9,6 +9,7 @@ mrz>=0.6.0
 deepface>=0.0.93
 tf-keras
 easyocr>=1.7.1
+zxing-cpp>=2.2.0
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch
 torchvision

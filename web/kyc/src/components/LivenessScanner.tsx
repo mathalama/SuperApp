@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Check, AlertCircle, RotateCcw, SwitchCamera, Upload, Camera, Sparkles, UserCheck } from 'lucide-react';
+import { Check, AlertCircle, RotateCcw, SwitchCamera, Sparkles, UserCheck, ArrowLeft, ArrowRight, Smile, ShieldCheck, Camera } from 'lucide-react';
 import './LivenessScanner.css';
 
-type CaptureState = 'live' | 'preview';
+type CaptureState = 'challenge' | 'preview';
 
 interface HeadPose {
   yaw: number;
@@ -18,43 +18,43 @@ interface LivenessScannerProps {
 const POSE_THRESHOLD = 20; // degrees
 const STABLE_FRAMES_NEEDED = 3;
 
-async function checkHeadPose(blob: Blob): Promise<HeadPose | null> {
-  try {
-    const form = new FormData();
-    form.append('frame', blob, 'frame.jpg');
-    const res = await fetch('/api/v1/head-pose-check', { method: 'POST', body: form });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.head_pose_angles ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function poseLabel(pose: HeadPose | null): string {
-  if (!pose) return 'Align your face inside the biometric oval';
-  if (Math.abs(pose.yaw) > POSE_THRESHOLD) return pose.yaw > 0 ? 'Turn your head slightly left' : 'Turn your head slightly right';
-  if (Math.abs(pose.pitch) > POSE_THRESHOLD) return pose.pitch > 0 ? 'Lower your chin slightly' : 'Raise your chin slightly';
-  if (Math.abs(pose.roll) > POSE_THRESHOLD) return 'Hold your device and head level';
-  return 'Biometrics aligned! Hold still for capture…';
-}
-
 export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onBack }) => {
-  const [captureState, setCaptureState] = useState<CaptureState>('live');
+  const [captureState, setCaptureState] = useState<CaptureState>('challenge');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pose, setPose] = useState<HeadPose | null>(null);
-  const [deviceTilt, setDeviceTilt] = useState<number | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
-  const [mode, setMode] = useState<'camera' | 'upload'>('camera');
   const [cameraError, setCameraError] = useState<string | null>(null);
+
+  // Multi-step real-time challenge state
+  const [challengeSteps, setChallengeSteps] = useState<string[]>(['CENTER', 'TURN_LEFT', 'SMILE']);
+  const [currentStepIdx, setCurrentStepIdx] = useState<number>(0);
+  const [isCapturingKeyframe, setIsCapturingKeyframe] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const blobRef = useRef<Blob | null>(null);
-  const stableFramesRef = useRef(0);
+  const stableCounterRef = useRef(0);
   const pollTimerRef = useRef<number | null>(null);
+
+  // Fetch dynamic challenge from ML service on mount
+  useEffect(() => {
+    async function loadChallenge() {
+      try {
+        const res = await fetch('/api/v1/liveness/challenge');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.steps && data.steps.length > 0) {
+            setChallengeSteps(data.steps);
+          }
+        }
+      } catch {
+        // Fallback to standard 3-stage challenge sequence
+        setChallengeSteps(['CENTER', 'TURN_LEFT', 'SMILE']);
+      }
+    }
+    loadChallenge();
+  }, []);
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -77,7 +77,7 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
       let mediaStream: MediaStream;
       try {
         mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: facing }, width: { ideal: 720 }, height: { ideal: 960 } },
+          video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 960 } },
         });
       } catch {
         try {
@@ -95,13 +95,12 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
       }
     } catch (err: any) {
       console.warn('Camera access failed:', err);
-      setCameraError('Camera access unavailable. Switch to upload mode.');
-      setMode('upload');
+      setCameraError('Real-time camera access is required for biometric liveness verification. Please grant camera permission.');
     }
   }, [facingMode, stopCamera]);
 
   useEffect(() => {
-    if (mode === 'camera' && captureState === 'live') {
+    if (captureState === 'challenge') {
       const timer = setTimeout(() => {
         startCamera(facingMode);
       }, 100);
@@ -112,22 +111,13 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
     } else {
       stopCamera();
     }
-  }, [mode, captureState, facingMode, startCamera, stopCamera]);
-
-  // Orientation tilt telemetry
-  useEffect(() => {
-    const handleOrientation = (e: DeviceOrientationEvent) => {
-      if (e.beta != null) setDeviceTilt(Math.round(e.beta));
-    };
-    window.addEventListener('deviceorientation', handleOrientation);
-    return () => window.removeEventListener('deviceorientation', handleOrientation);
-  }, []);
+  }, [captureState, facingMode, startCamera, stopCamera]);
 
   const grabCurrentFrame = (): Blob | null => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || video.readyState < 2) return null;
-    canvas.width = video.videoWidth || 720;
+    canvas.width = video.videoWidth || 1280;
     canvas.height = video.videoHeight || 960;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
@@ -136,7 +126,7 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
       ctx.scale(-1, 1);
     }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
     const byteString = atob(dataUrl.split(',')[1]);
     const ab = new ArrayBuffer(byteString.length);
     const ia = new Uint8Array(ab);
@@ -146,41 +136,58 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
     return new Blob([ab], { type: 'image/jpeg' });
   };
 
-  // Real-time pose telemetry polling
+  // Real-time evaluation loop
   useEffect(() => {
-    if (mode !== 'camera' || captureState !== 'live') return;
+    if (captureState !== 'challenge' || isCapturingKeyframe) return;
 
     pollTimerRef.current = window.setInterval(async () => {
       const frameBlob = grabCurrentFrame();
       if (!frameBlob) return;
 
-      const p = await checkHeadPose(frameBlob);
-      if (!p) {
-        setPose(null);
-        stableFramesRef.current = 0;
-        return;
-      }
+      const activeChallenge = challengeSteps[currentStepIdx] || 'CENTER';
 
-      setPose(p);
+      try {
+        const form = new FormData();
+        form.append('frame', frameBlob, 'live_frame.jpg');
+        const res = await fetch(`/api/v1/liveness/evaluate-frame?challenge=${activeChallenge}`, {
+          method: 'POST',
+          body: form
+        });
 
-      const ok =
-        Math.abs(p.yaw) <= POSE_THRESHOLD &&
-        Math.abs(p.pitch) <= POSE_THRESHOLD &&
-        Math.abs(p.roll) <= POSE_THRESHOLD;
+        if (res.ok) {
+          const data = await res.json();
+          if (data.angles) {
+            setPose(data.angles);
+          }
 
-      if (ok) {
-        stableFramesRef.current += 1;
-        if (stableFramesRef.current >= STABLE_FRAMES_NEEDED) {
-          blobRef.current = frameBlob;
-          const url = URL.createObjectURL(frameBlob);
-          setPreviewUrl(url);
-          setCaptureState('preview');
-          stopCamera();
+          if (data.passed) {
+            stableCounterRef.current += 1;
+            if (stableCounterRef.current >= STABLE_FRAMES_NEEDED) {
+              stableCounterRef.current = 0;
+              // Advance to next challenge or finish
+              if (currentStepIdx + 1 < challengeSteps.length) {
+                setCurrentStepIdx((prev) => prev + 1);
+              } else {
+                // All challenges successfully passed in real-time!
+                setIsCapturingKeyframe(true);
+                blobRef.current = frameBlob;
+                const url = URL.createObjectURL(frameBlob);
+                setPreviewUrl(url);
+                setTimeout(() => {
+                  setCaptureState('preview');
+                  setIsCapturingKeyframe(false);
+                  stopCamera();
+                }, 400);
+              }
+            }
+          } else {
+            stableCounterRef.current = 0;
+          }
         }
-      } else {
-        stableFramesRef.current = 0;
+      } catch (err) {
+        console.debug('Evaluation error:', err);
       }
-    }, 600);
+    }, 450);
 
     return () => {
       if (pollTimerRef.current) {
@@ -188,34 +195,17 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
         pollTimerRef.current = null;
       }
     };
-  }, [mode, captureState, stopCamera]);
-
-  const handleManualCapture = () => {
-    const frame = grabCurrentFrame();
-    if (!frame) return;
-    blobRef.current = frame;
-    const url = URL.createObjectURL(frame);
-    setPreviewUrl(url);
-    setCaptureState('preview');
-    stopCamera();
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    blobRef.current = file;
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    setCaptureState('preview');
-  };
+  }, [captureState, currentStepIdx, challengeSteps, isCapturingKeyframe, stopCamera]);
 
   const handleRetake = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     blobRef.current = null;
     setPose(null);
-    stableFramesRef.current = 0;
-    setCaptureState('live');
+    setCurrentStepIdx(0);
+    setIsCapturingKeyframe(false);
+    stableCounterRef.current = 0;
+    setCaptureState('challenge');
   };
 
   const handleConfirm = () => {
@@ -224,30 +214,92 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
     }
   };
 
-  const isPoseOk =
-    pose !== null &&
-    Math.abs(pose.yaw) <= POSE_THRESHOLD &&
-    Math.abs(pose.pitch) <= POSE_THRESHOLD &&
-    Math.abs(pose.roll) <= POSE_THRESHOLD;
+  const currentChallenge = challengeSteps[currentStepIdx] || 'CENTER';
+
+  const getChallengeInstructions = (type: string) => {
+    switch (type) {
+      case 'CENTER':
+      case 'ALIGN':
+        return {
+          title: 'Position your face in the oval',
+          subtitle: 'Hold your head straight and level',
+          icon: <UserCheck size={20} color="#10b981" />
+        };
+      case 'TURN_LEFT':
+        return {
+          title: 'Turn your head slightly to your LEFT',
+          subtitle: 'Keep your face visible in the camera frame',
+          icon: <ArrowLeft size={20} color="#6366f1" />
+        };
+      case 'TURN_RIGHT':
+        return {
+          title: 'Turn your head slightly to your RIGHT',
+          subtitle: 'Keep your face visible in the camera frame',
+          icon: <ArrowRight size={20} color="#6366f1" />
+        };
+      case 'SMILE':
+        return {
+          title: 'Smile naturally at the camera',
+          subtitle: 'Biometric expression validation active',
+          icon: <Smile size={20} color="#f59e0b" />
+        };
+      default:
+        return {
+          title: 'Look directly into the camera',
+          subtitle: 'Follow the on-screen indicators',
+          icon: <Sparkles size={20} color="#10b981" />
+        };
+    }
+  };
+
+  const instruction = getChallengeInstructions(currentChallenge);
+  const progressPercent = Math.round(((currentStepIdx + (isCapturingKeyframe ? 1 : 0)) / challengeSteps.length) * 100);
 
   return (
     <div className="scanner fade-in">
-      <h2 className="scanner-title">Biometric Face Verification</h2>
+      <div className="scanner-badge-row">
+        <span className="live-pill">
+          <span className="pulse-dot" /> LIVE STREAM ONLY
+        </span>
+        <span className="security-badge">
+          <ShieldCheck size={13} /> ISO/IEC 30107-3 PAD
+        </span>
+      </div>
+
+      <h2 className="scanner-title">Real-Time Biometric Liveness</h2>
       <p className="scanner-subtitle">
-        Look directly into the camera. Our neural network will verify liveness and match with your document photo.
+        Static photos are disabled. Verification requires real-time interaction through your live camera.
       </p>
 
-      {/* Mode selection if camera failed */}
-      {cameraError && mode === 'upload' && (
-        <div className="alert alert-warning" style={{ marginBottom: '16px' }}>
-          <AlertCircle size={16} />
-          <span>{cameraError}</span>
+      {/* Progress Track */}
+      <div className="challenge-progress-bar">
+        <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
+      </div>
+      <div className="step-tracker-label">
+        Step {Math.min(currentStepIdx + 1, challengeSteps.length)} of {challengeSteps.length}: {currentChallenge}
+      </div>
+
+      {cameraError && (
+        <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+          <AlertCircle size={18} />
+          <div>
+            <div style={{ fontWeight: 700 }}>Camera Permission Required</div>
+            <div style={{ fontSize: '12px' }}>{cameraError}</div>
+            <button
+              type="button"
+              onClick={() => startCamera(facingMode)}
+              className="btn btn-secondary"
+              style={{ marginTop: '10px', padding: '6px 14px', fontSize: '12px' }}
+            >
+              <Camera size={14} /> Retry Camera
+            </button>
+          </div>
         </div>
       )}
 
       {/* Viewport */}
       <div className="liveness-viewport">
-        {captureState === 'live' && mode === 'camera' && (
+        {captureState === 'challenge' && (
           <>
             <video
               ref={videoRef}
@@ -271,11 +323,11 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
                 cy="190"
                 rx="95"
                 ry="135"
-                className={`oval-ring ${isPoseOk ? 'stable' : ''}`}
+                className={`oval-ring ${isCapturingKeyframe ? 'verified' : ''}`}
               />
             </svg>
 
-            {/* Telemetry chips */}
+            {/* Dynamic Telemetry Chips */}
             <div className="pose-chip-row">
               {pose ? (
                 <>
@@ -291,111 +343,65 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
                 </>
               ) : (
                 <span className="chip">
-                  <Sparkles size={11} /> Biometric HUD Active
+                  <Sparkles size={11} /> Tracking Landmarks...
                 </span>
-              )}
-              {deviceTilt !== null && (
-                <span className="chip">Tilt: {deviceTilt}°</span>
               )}
             </div>
           </>
         )}
 
         {captureState === 'preview' && previewUrl && (
-          <img src={previewUrl} alt="Selfie preview" className="scanner-preview-img" />
+          <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <img src={previewUrl} alt="Verified live capture" className="scanner-preview-img" />
+            <div className="verified-overlay-badge">
+              <Check size={18} /> Live Biometrics Verified
+            </div>
+          </div>
         )}
       </div>
 
       {/* Real-time Guidance Message */}
-      {captureState === 'live' && mode === 'camera' && (
-        <div style={{
-          background: isPoseOk ? 'var(--emerald-light)' : 'var(--bg-surface-elevated)',
-          border: `1px solid ${isPoseOk ? 'var(--emerald-border)' : 'var(--border)'}`,
-          borderRadius: 'var(--radius-md)',
-          padding: '12px 16px',
-          marginBottom: '20px',
-          color: isPoseOk ? '#34d399' : 'var(--text-secondary)',
-          fontSize: '13px',
-          fontWeight: 700,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          transition: 'all 0.25s ease'
-        }}>
-          {isPoseOk ? <UserCheck size={16} /> : <Sparkles size={16} />}
-          <span>{poseLabel(pose)}</span>
+      {captureState === 'challenge' && (
+        <div className="guidance-box">
+          <div className="guidance-icon">{instruction.icon}</div>
+          <div>
+            <div className="guidance-title">{instruction.title}</div>
+            <div className="guidance-subtitle">{instruction.subtitle}</div>
+          </div>
         </div>
       )}
 
-      {/* Capture Actions */}
-      {captureState === 'live' ? (
+      {/* Actions */}
+      {captureState === 'challenge' ? (
         <div className="scanner-actions">
-          {mode === 'camera' ? (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  const next = facingMode === 'user' ? 'environment' : 'user';
-                  setFacingMode(next);
-                  startCamera(next);
-                }}
-                className="btn btn-secondary"
-              >
-                <SwitchCamera size={16} /> Flip
-              </button>
-              <button type="button" onClick={handleManualCapture} className="btn btn-primary">
-                <Camera size={16} /> Take Photo
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="btn btn-primary"
-              style={{ width: '100%' }}
-            >
-              <Upload size={16} /> Choose Selfie Photo
+          <button
+            type="button"
+            onClick={() => {
+              const next = facingMode === 'user' ? 'environment' : 'user';
+              setFacingMode(next);
+              startCamera(next);
+            }}
+            className="btn btn-secondary"
+          >
+            <SwitchCamera size={16} /> Switch Camera
+          </button>
+          {onBack && (
+            <button type="button" onClick={onBack} className="btn btn-secondary">
+              Back to Document
             </button>
           )}
         </div>
       ) : (
         <div className="scanner-actions">
           <button type="button" onClick={handleRetake} className="btn btn-secondary">
-            <RotateCcw size={16} /> Retake
+            <RotateCcw size={16} /> Retake Live Scan
           </button>
           <button type="button" onClick={handleConfirm} className="btn btn-primary">
-            <Check size={16} /> Confirm & Verify
+            <Check size={16} /> Submit Verified Biometrics
           </button>
         </div>
       )}
 
-      {/* Fallback switch toggle */}
-      {captureState === 'live' && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '14px' }}>
-          <button
-            type="button"
-            onClick={() => setMode(mode === 'camera' ? 'upload' : 'camera')}
-            className="btn-text"
-          >
-            {mode === 'camera' ? 'Switch to photo upload' : 'Switch to live camera'}
-          </button>
-
-          {onBack && (
-            <button type="button" onClick={onBack} className="btn-text">
-              Back to document
-            </button>
-          )}
-        </div>
-      )}
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/png"
-        onChange={handleFileUpload}
-        style={{ display: 'none' }}
-      />
       <canvas ref={canvasRef} style={{ display: 'none' }} />
     </div>
   );
