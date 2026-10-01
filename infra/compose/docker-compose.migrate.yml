@@ -3,7 +3,7 @@ services:
   migrate-identity:
     build:
       context: ../../services/identity-service
-      dockerfile: ../docker/Dockerfile.flyway
+      dockerfile: ../../infra/docker/Dockerfile.flyway
     container_name: migrate-identity
     env_file:
       - ../../.env
@@ -23,7 +23,7 @@ services:
   migrate-user:
     build:
       context: ../../services/user-service
-      dockerfile: ../docker/Dockerfile.flyway
+      dockerfile: ../../infra/docker/Dockerfile.flyway
     container_name: migrate-user
     env_file:
       - ../../.env
@@ -43,7 +43,7 @@ services:
   migrate-kyc:
     build:
       context: ../../services/kyc-service
-      dockerfile: ../docker/Dockerfile.flyway
+      dockerfile: ../../infra/docker/Dockerfile.flyway
     container_name: migrate-kyc
     env_file:
       - ../../.env

@@ -86,7 +86,7 @@ services:
   minio:
     image: minio/minio:latest
     container_name: minio
-    command: server /data --console-address ":9001"
+    command: minio server /data --console-address ":9001"
     ports:
       - "${S3_PORT}:9000"
       - "${S3_CONSOLE_PORT}:9001"
@@ -96,7 +96,7 @@ services:
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 3

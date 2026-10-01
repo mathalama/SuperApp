@@ -72,8 +72,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-${{ matrix.service }}-
 
-      - name: Build Service
+      - name: Build & Test Service
         working-directory: services/${{ matrix.service }}
         run: |
           chmod +x ./gradlew
-          ./gradlew testClasses --no-daemon
+          ./gradlew test --no-daemon

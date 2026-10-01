@@ -3,7 +3,7 @@ services:
   api-gateway:
     build:
       context: ../../services/api-gateway
-      dockerfile: ../docker/Dockerfile.jvm
+      dockerfile: ../../infra/docker/Dockerfile.jvm
       args:
         PORT: 8010
     container_name: api-gateway
@@ -36,7 +36,7 @@ services:
   identity-service:
     build:
       context: ../../services/identity-service
-      dockerfile: ../docker/Dockerfile.jvm
+      dockerfile: ../../infra/docker/Dockerfile.jvm
       args:
         PORT: 8080
     container_name: identity-service
@@ -73,7 +73,7 @@ services:
   user-service:
     build:
       context: ../../services/user-service
-      dockerfile: ../docker/Dockerfile.jvm
+      dockerfile: ../../infra/docker/Dockerfile.jvm
       args:
         PORT: 8083
     container_name: user-service
@@ -109,7 +109,7 @@ services:
   notification-service:
     build:
       context: ../../services/notification-service
-      dockerfile: ../docker/Dockerfile.jvm
+      dockerfile: ../../infra/docker/Dockerfile.jvm
       args:
         PORT: 8084
     container_name: notification-service
@@ -142,7 +142,7 @@ services:
   kyc-service:
     build:
       context: ../../services/kyc-service
-      dockerfile: ../docker/Dockerfile.jvm
+      dockerfile: ../../infra/docker/Dockerfile.jvm
       args:
         PORT: 8085
     container_name: kyc-service
@@ -180,7 +180,7 @@ services:
   kyc-ml-service:
     build:
       context: ../../services/kyc-ml-service
-      dockerfile: ../docker/Dockerfile.ml
+      dockerfile: ../../infra/docker/Dockerfile.ml
     container_name: kyc-ml-service
     environment:
       LOG_LEVEL: info

@@ -2,7 +2,7 @@ services:
   kyc-web:
     build:
       context: ../../web/kyc
-      dockerfile: ../docker/Dockerfile.web
+      dockerfile: ../../infra/docker/Dockerfile.web
     container_name: kyc-web
     ports:
       - "3000:3000"
