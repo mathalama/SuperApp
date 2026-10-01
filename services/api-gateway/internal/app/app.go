@@ -88,6 +88,10 @@ func New(cfg *config.Config) (*App, error) {
 	r.Use(chimiddleware.Recoverer)
 	r.Use(middleware.NewCorsMiddleware())
 
+	// JWT Relay
+	jwtRelay := middleware.NewJwtRelayMiddleware(cfg.JwtSecret, rdb)
+	r.Use(jwtRelay.Handler)
+
 	// Health Check (Spring Boot Actuator compatible)
 	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -100,10 +104,6 @@ func New(cfg *config.Config) (*App, error) {
 	}
 	r.Get("/actuator/health", healthHandler)
 	r.Get("/health", healthHandler)
-
-	// JWT Relay
-	jwtRelay := middleware.NewJwtRelayMiddleware(cfg.JwtSecret, rdb)
-	r.Use(jwtRelay.Handler)
 
 	// Downstream Route Mappings
 	r.Handle("/auth/*", identityProxy)

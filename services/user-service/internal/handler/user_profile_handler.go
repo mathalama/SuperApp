@@ -36,6 +36,7 @@ func (h *UserProfileHandler) RegisterRoutes(r chi.Router) {
 
 	// Health and actuator endpoints
 	r.Get("/actuator/health", h.HealthCheck)
+	r.Get("/health", h.HealthCheck)
 	r.Get("/actuator/info", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]string{

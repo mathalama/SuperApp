@@ -11,6 +11,7 @@ services:
     ports:
       - "${GATEWAY_PORT}:8010"
     environment:
+      PORT: 8010
       JWT_SECRET: ${JWT_SECRET}
       FRONTEND_URL: ${FRONTEND_URL}
       SPRING_DATA_REDIS_HOST: redis
@@ -26,10 +27,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
-      interval: 30s
+      interval: 10s
       timeout: 3s
-      retries: 3
-      start_period: 5s
+      retries: 5
+      start_period: 3s
     networks:
       - super-app-network
 
@@ -100,11 +101,11 @@ services:
       minio:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 8083 || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
     networks:
       - super-app-network
 
@@ -118,6 +119,7 @@ services:
         CMD_PATH: ./cmd/notification
     container_name: notification-service
     environment:
+      PORT: 8084
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SPRING_MAIL_HOST: ${MAIL_HOST}
       SPRING_MAIL_PORT: ${MAIL_PORT}
@@ -135,10 +137,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
-      interval: 30s
+      interval: 10s
       timeout: 3s
-      retries: 3
-      start_period: 5s
+      retries: 5
+      start_period: 3s
     networks:
       - super-app-network
 

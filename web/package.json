@@ -1,0 +1,11 @@
+{
+  "name": "superapp-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SuperApp Web Applications",
+  "scripts": {
+    "dev": "npm --prefix kyc run dev",
+    "build": "npm --prefix kyc run build",
+    "preview": "npm --prefix kyc run preview"
+  }
+}
