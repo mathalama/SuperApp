@@ -49,6 +49,7 @@ jobs:
         service:
           - api-gateway
           - notification-service
+          - user-service
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -73,7 +74,6 @@ jobs:
       matrix:
         service:
           - identity-service
-          - user-service
           - kyc-service
     steps:
       - name: Checkout Code

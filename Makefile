@@ -13,8 +13,8 @@ RED    := \033[31m
 BOLD   := \033[1m
 RESET  := \033[0m
 
-JAVA_SERVICES := identity-service kyc-service user-service
-GO_SERVICES   := api-gateway notification-service
+JAVA_SERVICES := identity-service kyc-service
+GO_SERVICES   := api-gateway notification-service user-service
 
 .PHONY: help
 help: ## Display this help screen
