@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Email Verification</title>
@@ -10,12 +10,12 @@
         <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700;">Verify Your Email Address</h1>
     </div>
     <div style="padding: 40px 30px;">
-        <h3 style="color: #1f2937; margin-top: 0; font-size: 20px; font-weight: 600;">Hello <span th:text="${username}">User</span>,</h3>
+        <h3 style="color: #1f2937; margin-top: 0; font-size: 20px; font-weight: 600;">Hello <span>{{.Username}}</span>,</h3>
         <p style="color: #4b5563; font-size: 16px;">Thank you for registering! Please use the 6-digit code below to verify your email address and activate your account:</p>
 
         <div style="text-align: center; margin: 40px 0 30px 0;">
             <div style="background-color: #f3f4f6; border: 2px dashed #007bff; color: #1f2937; padding: 15px 30px; letter-spacing: 5px; font-weight: 700; font-size: 32px; display: inline-block; border-radius: 8px;">
-                <span th:text="${verificationCode}">123456</span>
+                <span>{{.VerificationCode}}</span>
             </div>
         </div>
 
