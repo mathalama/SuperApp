@@ -40,14 +40,32 @@ jobs:
           npm ci
           npm run build
 
+  gateway-go-build:
+    name: Build & Test Go Gateway
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: services/api-gateway/go.sum
+
+      - name: Run Tests
+        working-directory: services/api-gateway
+        run: |
+          go test -v ./...
+          go build -v -o /dev/null ./cmd/gateway
+
   services-build:
-    name: Build & Test Microservices
+    name: Build & Test Microservices (JVM)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         service:
-          - api-gateway
           - identity-service
           - user-service
           - notification-service
