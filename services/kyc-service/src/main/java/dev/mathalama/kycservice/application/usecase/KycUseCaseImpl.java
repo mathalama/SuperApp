@@ -115,7 +115,22 @@ public class KycUseCaseImpl implements KycUseCase {
             app.setExtractedNationality(ml.getExtractedData().getNationality());
         }
 
-        // Multi-tier Decision Engine
+        // Multi-tier Tri-State Decision Engine
+        if (ml.getDecision() != null) {
+            if ("PASS".equalsIgnoreCase(ml.getDecision())) {
+                app.setStatus(KycStatus.VERIFIED);
+                app.setRejectionReason(null);
+                return;
+            } else if ("REJECT".equalsIgnoreCase(ml.getDecision())) {
+                app.setStatus(KycStatus.REJECTED);
+                app.setRejectionReason(ml.getDecisionReason() != null ? ml.getDecisionReason() : "Verification rejected.");
+                return;
+            } else if ("MANUAL_REVIEW".equalsIgnoreCase(ml.getDecision())) {
+                app.setStatus(KycStatus.MANUAL_REVIEW);
+                app.setRejectionReason(ml.getDecisionReason() != null ? ml.getDecisionReason() : "Sent for manual review.");
+                return;
+            }
+        }
 
         // 1. Image quality validation (lighting, resolution, multiple faces)
         String err = ml.getErrorCode();

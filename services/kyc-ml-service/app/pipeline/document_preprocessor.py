@@ -67,6 +67,22 @@ class DocumentPreprocessor:
             "brightness": round(mean_brightness, 1)
         }
 
+    @classmethod
+    def enhance_contrast(cls, img_bgr: np.ndarray) -> np.ndarray:
+        """
+        Enhances document legibility using CLAHE (Contrast Limited Adaptive Histogram Equalization).
+        Significantly improves OCR accuracy on passports with holograms, security patterns, and low contrast.
+        """
+        try:
+            lab = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2LAB)
+            l, a, b = cv2.split(lab)
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            cl = clahe.apply(l)
+            enhanced_lab = cv2.merge((cl, a, b))
+            return cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+        except Exception:
+            return img_bgr
+
     @staticmethod
     def _order_points(pts: np.ndarray) -> np.ndarray:
         """Orders 4 coordinates: top-left, top-right, bottom-right, bottom-left."""

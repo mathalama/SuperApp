@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, Dict
+from typing import Optional, Dict, Literal
 
 class ExtractedData(BaseModel):
     first_name: Optional[str] = None
@@ -9,8 +9,17 @@ class ExtractedData(BaseModel):
     expiry_date: Optional[str] = None
     gender: Optional[str] = None
     nationality: Optional[str] = None
+    personal_number: Optional[str] = None
 
 class KycVerifyResponse(BaseModel):
+    # Tri-state KYC decisions: PASS, MANUAL_REVIEW, REJECT
+    decision: Literal["PASS", "MANUAL_REVIEW", "REJECT"]
+    decision_reason: str
+    liveness_status: Literal["PASS", "MANUAL_REVIEW", "REJECT"]
+    face_match_status: Literal["PASS", "MANUAL_REVIEW", "REJECT"]
+    document_status: Literal["PASS", "MANUAL_REVIEW", "REJECT"]
+
+    # Biometric & OCR Telemetry metrics
     liveness_score: float
     similarity_score: float
     is_live: bool

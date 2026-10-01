@@ -9,6 +9,21 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class MlInferenceResponse {
+    @JsonProperty("decision")
+    private String decision;
+
+    @JsonProperty("decision_reason")
+    private String decisionReason;
+
+    @JsonProperty("liveness_status")
+    private String livenessStatus;
+
+    @JsonProperty("face_match_status")
+    private String faceMatchStatus;
+
+    @JsonProperty("document_status")
+    private String documentStatus;
+
     @JsonProperty("liveness_score")
     private Double livenessScore;
 

@@ -49,15 +49,38 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
 
   const status = getStatusConfig();
 
-  const formatScore = (score: number | null) => {
-    if (score === null || score === undefined) return 'N/A';
-    return `${Math.round(score * 100)}%`;
+  const getBiometricStatus = (score: number | null, passThreshold: number, reviewThreshold: number) => {
+    if (score === null || score === undefined) {
+      return { text: 'N/A', color: 'var(--text-muted)', hint: 'Not evaluated' };
+    }
+    if (score >= passThreshold) {
+      return { text: 'PASS', color: 'var(--emerald)', hint: 'Biometrics verified' };
+    }
+    if (score >= reviewThreshold) {
+      return { text: 'MANUAL REVIEW', color: 'var(--amber)', hint: 'Operator check' };
+    }
+    return { text: 'REJECT', color: 'var(--rose)', hint: 'Threshold failed' };
   };
 
-  const getScoreColor = (score: number | null, threshold: number) => {
-    if (score === null || score === undefined) return 'var(--text-muted)';
-    return score >= threshold ? 'var(--emerald)' : 'var(--rose)';
+  const getDocStatus = (mrzValid: boolean | null) => {
+    if (mrzValid === true) {
+      return { text: 'PASS', color: 'var(--emerald)', hint: 'ICAO validated' };
+    }
+    if (mrzValid === false) {
+      return { text: 'MANUAL REVIEW', color: 'var(--amber)', hint: 'Operator check' };
+    }
+    return { text: 'MANUAL REVIEW', color: 'var(--amber)', hint: 'Visual zone ID' };
   };
+
+  const livenessDecision = getBiometricStatus(result.livenessScore, 0.85, 0.60);
+  const matchDecision = getBiometricStatus(result.faceMatchScore, 0.70, 0.55);
+  const docDecision = getDocStatus(result.mrzValid);
+
+  const displayDecision = result.status === 'VERIFIED'
+    ? 'PASS'
+    : result.status === 'REJECTED'
+      ? 'REJECT'
+      : 'MANUAL REVIEW';
 
   const extractedFields = [
     { label: 'First Name', value: result.firstName },
@@ -83,8 +106,8 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
           {status.icon}
         </div>
         <div style={{ marginBottom: '6px' }}>
-          <span className={status.badgeClass} style={{ fontSize: '11px' }}>
-            STATUS: {result.status}
+          <span className={status.badgeClass} style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em' }}>
+            DECISION: {displayDecision}
           </span>
         </div>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.02em' }}>
@@ -95,7 +118,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
         </p>
       </div>
 
-      {/* Biometric Scores Telemetry Grid */}
+      {/* Biometric Status Telemetry Grid (Categorical: PASS / MANUAL REVIEW / REJECT) */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
@@ -103,46 +126,43 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({ re
         marginBottom: '14px'
       }}>
 
-        {/* Liveness Score */}
+        {/* Liveness Status */}
         <div className="card stat-card">
           <div className="stat-label">
             <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
               <Fingerprint size={12} color="var(--primary)" /> Liveness
             </span>
           </div>
-          <div className="stat-value" style={{ color: getScoreColor(result.livenessScore, 0.85) }}>
-            {formatScore(result.livenessScore)}
+          <div className="stat-value" style={{ color: livenessDecision.color, fontSize: '14px', fontWeight: 800 }}>
+            {livenessDecision.text}
           </div>
-          <div className="stat-hint">Cutoff ≥ 85%</div>
+          <div className="stat-hint">{livenessDecision.hint}</div>
         </div>
 
-        {/* Face Match Score */}
+        {/* Face Match Status */}
         <div className="card stat-card">
           <div className="stat-label">
             <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <ScanFace size={12} color="var(--primary)" /> Match
+              <ScanFace size={12} color="var(--primary)" /> Face Match
             </span>
           </div>
-          <div className="stat-value" style={{ color: getScoreColor(result.faceMatchScore, 0.70) }}>
-            {formatScore(result.faceMatchScore)}
+          <div className="stat-value" style={{ color: matchDecision.color, fontSize: '14px', fontWeight: 800 }}>
+            {matchDecision.text}
           </div>
-          <div className="stat-hint">Cutoff ≥ 70%</div>
+          <div className="stat-hint">{matchDecision.hint}</div>
         </div>
 
-        {/* MRZ Validity */}
+        {/* Document Status */}
         <div className="card stat-card">
           <div className="stat-label">
             <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <ShieldCheck size={12} color="var(--emerald)" /> MRZ
+              <ShieldCheck size={12} color="var(--emerald)" /> Document
             </span>
           </div>
-          <div className="stat-value" style={{
-            color: result.mrzValid ? 'var(--emerald)' : 'var(--rose)',
-            fontSize: '18px',
-          }}>
-            {result.mrzValid === null ? 'N/A' : result.mrzValid ? 'VALID' : 'INVALID'}
+          <div className="stat-value" style={{ color: docDecision.color, fontSize: '14px', fontWeight: 800 }}>
+            {docDecision.text}
           </div>
-          <div className="stat-hint">ICAO Valid</div>
+          <div className="stat-hint">{docDecision.hint}</div>
         </div>
 
       </div>
