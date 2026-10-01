@@ -41,7 +41,7 @@ void main() {
     expect(find.text('Create Account'), findsOneWidget);
   });
 
-  testWidgets('Renders HomeKycFlowScreen when user is authenticated', (WidgetTester tester) async {
+  testWidgets('Renders IosMainShell with user dashboard when user is authenticated', (WidgetTester tester) async {
     const user = UserEntity(
       id: 'usr-1',
       username: 'johndoe',
@@ -56,6 +56,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('johndoe'), findsOneWidget);
-    expect(find.text('Scan Government ID'), findsOneWidget);
+    expect(find.text('SuperApp ID'), findsOneWidget);
+    expect(find.text('Обзор'), findsOneWidget);
   });
 }

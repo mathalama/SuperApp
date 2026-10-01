@@ -9,7 +9,7 @@ import 'presentation/bloc/auth/auth_bloc.dart';
 import 'presentation/bloc/auth/auth_event.dart';
 import 'presentation/bloc/auth/auth_state.dart';
 import 'presentation/bloc/kyc/kyc_bloc.dart';
-import 'presentation/home_kyc_flow_screen.dart';
+import 'presentation/ios_main_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,7 +60,7 @@ class RootNavigationCoordinator extends StatelessWidget {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         if (state is AuthAuthenticatedState) {
-          return HomeKycFlowScreen(user: state.user);
+          return IosMainShell(user: state.user);
         }
 
         if (state is AuthInitialState) {

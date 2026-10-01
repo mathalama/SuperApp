@@ -1,6 +1,12 @@
 class ApiConstants {
-  /// ngrok backend address
-  static const String defaultBaseUrl = 'https://unforgetting-dialectologically-lan.ngrok-free.dev';
+  /// Base URL:
+  /// - Uses BASE_URL dart-define if provided
+  /// - Default: http://127.0.0.1:8700 (works on real phones via 'adb reverse tcp:8700 tcp:8700' and localhost)
+  static String get defaultBaseUrl {
+    const fromEnv = String.fromEnvironment('BASE_URL');
+    if (fromEnv.isNotEmpty) return fromEnv;
+    return 'http://127.0.0.1:8700';
+  }
 
   // Auth Endpoints (matching backend Gateway / Auth service)
   static const String register = '/auth/register';
