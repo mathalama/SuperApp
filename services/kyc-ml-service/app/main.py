@@ -70,13 +70,13 @@ def get_liveness_challenge():
     }
 
 @app.post("/api/v1/liveness/evaluate-frame")
-async def evaluate_live_frame(
+def evaluate_live_frame(
     frame: UploadFile = File(...),
     challenge: str = "CENTER"
 ):
-    """Evaluates a live video frame against the active real-time challenge."""
+    """Evaluates a live video frame against the active real-time challenge in a worker thread."""
     try:
-        frame_bytes = await frame.read()
+        frame_bytes = frame.file.read()
         if not frame_bytes:
             return {"passed": False, "head_pose_valid": False, "angles": None}
         nparr = np.frombuffer(frame_bytes, np.uint8)
@@ -91,9 +91,9 @@ async def evaluate_live_frame(
         return {"passed": True, "head_pose_valid": True, "angles": {"yaw": 0.0, "pitch": 0.0, "roll": 0.0}}
 
 @app.post("/api/v1/head-pose-check")
-async def check_head_pose_live(frame: UploadFile = File(...)):
+def check_head_pose_live(frame: UploadFile = File(...)):
     try:
-        frame_bytes = await frame.read()
+        frame_bytes = frame.file.read()
         if not frame_bytes:
             return {"head_pose_valid": False, "head_pose_angles": None}
         nparr = np.frombuffer(frame_bytes, np.uint8)
@@ -114,15 +114,15 @@ async def check_head_pose_live(frame: UploadFile = File(...)):
         return {"head_pose_valid": True, "head_pose_angles": {"yaw": 0.0, "pitch": 0.0, "roll": 0.0}}
 
 @app.post("/api/v1/verify", response_model=KycVerifyResponse)
-async def verify_kyc(
+def verify_kyc(
     document_image: UploadFile = File(...),
     selfie_image: UploadFile = File(...),
     document_back_image: Optional[UploadFile] = File(None)
 ):
     try:
-        doc_bytes = await document_image.read()
-        selfie_bytes = await selfie_image.read()
-        back_bytes = await document_back_image.read() if document_back_image else None
+        doc_bytes = document_image.file.read()
+        selfie_bytes = selfie_image.file.read()
+        back_bytes = document_back_image.file.read() if document_back_image else None
 
         if not doc_bytes or not selfie_bytes:
             raise HTTPException(status_code=400, detail="Document or selfie image is empty")

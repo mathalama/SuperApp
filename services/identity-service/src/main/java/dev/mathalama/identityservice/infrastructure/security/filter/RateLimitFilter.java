@@ -50,7 +50,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 redisTemplate.expire(redisKey, 1, TimeUnit.MINUTES);
             }
 
-            if (currentRequests != null & currentRequests > MAX_REQUESTS_PER_MINUTE) {
+            if (currentRequests != null && currentRequests > MAX_REQUESTS_PER_MINUTE) {
                 response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
                 response.setContentType("application/json");
                 response.getWriter().write("{\"error\": \"Too many requests. Please try again later.\"}");

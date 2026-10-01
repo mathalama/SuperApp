@@ -18,6 +18,7 @@ import dev.mathalama.identityservice.domain.exception.InvalidAccountStateExcepti
 import dev.mathalama.identityservice.domain.exception.InvalidPasswordException;
 
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -34,8 +35,8 @@ public class PasswordUseCaseImpl implements PasswordUseCase {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public void changePassword(String username, String oldPassword, String newPassword) {
-        User user = userRepository.findByUsername(username)
+    public void changePassword(UUID userId, String oldPassword, String newPassword) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new InvalidPasswordException("Invalid old password");
@@ -43,17 +44,22 @@ public class PasswordUseCaseImpl implements PasswordUseCase {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         tokenStore.revokeAllRefreshTokens(user.getId().toString());
-        log.info("Password changed successfully for user: {}", username);
+        log.info("Password changed successfully for user: {}", user.getUsername());
     }
 
 
     @Override
     public void forgotPassword(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            log.info("Password reset requested for non-existent email: {}", email);
+            return;
+        }
 
+        User user = userOpt.get();
         if (user.getAccountState() != AccountState.ACTIVE) {
-            throw new InvalidAccountStateException("Account is inactive");
+            log.warn("Password reset requested for inactive account: {}", email);
+            return;
         }
 
         if (!passwordResetTokenStore.canResendToken(user)) {

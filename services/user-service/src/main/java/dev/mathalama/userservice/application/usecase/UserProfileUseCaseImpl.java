@@ -1,6 +1,7 @@
 package dev.mathalama.userservice.application.usecase;
 
 import dev.mathalama.userservice.application.dto.request.UpdateProfileRequest;
+import dev.mathalama.userservice.domain.exception.UserProfileNotFoundException;
 import dev.mathalama.userservice.domain.model.UserProfile;
 import dev.mathalama.userservice.domain.port.in.UserProfileUseCase;
 import dev.mathalama.userservice.domain.port.out.AvatarStoragePort;
@@ -45,7 +46,7 @@ public class UserProfileUseCaseImpl implements UserProfileUseCase {
     @Transactional
     public UserProfile updateProfile(UUID userId, UpdateProfileRequest request) {
         UserProfile profile = userProfileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Profile not found for userId=" + userId));
+                .orElseThrow(() -> new UserProfileNotFoundException("Profile not found for userId=" + userId));
 
         if (request.avatarUrl() != null) {
             profile.setAvatarUrl(request.avatarUrl());
@@ -73,7 +74,7 @@ public class UserProfileUseCaseImpl implements UserProfileUseCase {
     @Transactional
     public UserProfile uploadAvatar(UUID userId, org.springframework.web.multipart.MultipartFile file) {
         UserProfile profile = userProfileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Profile not found for userId=" + userId));
+                .orElseThrow(() -> new UserProfileNotFoundException("Profile not found for userId=" + userId));
 
         if (profile.getAvatarUrl() != null) {
             avatarStoragePort.deleteAvatar(profile.getAvatarUrl());
@@ -88,7 +89,7 @@ public class UserProfileUseCaseImpl implements UserProfileUseCase {
     @Transactional
     public UserProfile deleteAvatar(UUID userId) {
         UserProfile profile = userProfileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Profile not found for userId=" + userId));
+                .orElseThrow(() -> new UserProfileNotFoundException("Profile not found for userId=" + userId));
 
         if (profile.getAvatarUrl() != null) {
             avatarStoragePort.deleteAvatar(profile.getAvatarUrl());

@@ -4,9 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record ChangePasswordRequest(
-        @NotBlank(message = "Username is required")
-        String username,
-
         @NotBlank(message = "Old password is required")
         String oldPassword,
 

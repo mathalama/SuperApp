@@ -67,7 +67,7 @@ public class OutboxProcessor {
             case "USER_REGISTERED" -> UserRegisteredEvent.class;
             case "VERIFICATION_EMAIL_REQUESTED" -> VerificationEmailRequestedEvent.class;
             case "PASSWORD_RESET_EMAIL_REQUESTED" -> PasswordResetEmailRequestedEvent.class;
-            default -> Object.class;
+            default -> throw new IllegalArgumentException("Unknown outbox event type: " + eventType);
         };
     }
 }

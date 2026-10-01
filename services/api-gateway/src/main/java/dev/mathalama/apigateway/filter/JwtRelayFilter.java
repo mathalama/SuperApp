@@ -39,6 +39,8 @@ public class JwtRelayFilter implements GlobalFilter, Ordered {
                         "/auth/reset-forgotten-password",
                         "/auth/oauth-exchange",
                         "/api/v1/head-pose-check",
+                        "/api/v1/liveness/challenge",
+                        "/api/v1/liveness/evaluate-frame",
                         "/actuator/health");
 
         private static final Set<String> PUBLIC_PREFIXES = Set.of(
@@ -47,7 +49,6 @@ public class JwtRelayFilter implements GlobalFilter, Ordered {
                         "/swagger-ui",
                         "/login/oauth2",
                         "/oauth2",
-                        "/api/v1",
                         "/.well-known");
 
         public JwtRelayFilter(

@@ -66,6 +66,9 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers(
                                                                 "/auth/logout",
+                                                                "/auth/change-password",
+                                                                "/auth/me",
+                                                                "/auth/me/**",
                                                                 "/auth/sessions",
                                                                 "/auth/sessions/**")
                                                 .authenticated()

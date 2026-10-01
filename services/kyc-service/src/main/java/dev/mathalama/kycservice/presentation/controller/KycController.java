@@ -38,9 +38,25 @@ public class KycController {
     }
 
     @GetMapping("/{applicationId}")
-    public ResponseEntity<KycApplicationResponse> getKycById(@PathVariable UUID applicationId) {
+    public ResponseEntity<KycApplicationResponse> getKycById(
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
+            @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
+            @PathVariable UUID applicationId) {
+
+        if (userIdHeader == null || userIdHeader.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        UUID requestUserId = UUID.fromString(userIdHeader);
+        boolean isAdmin = rolesHeader != null && (rolesHeader.contains("ADMIN") || rolesHeader.contains("ROLE_ADMIN"));
+
         return kycUseCase.getApplicationById(applicationId)
-                .map(ResponseEntity::ok)
+                .map(app -> {
+                    if (!isAdmin && !app.getUserId().equals(requestUserId)) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN).<KycApplicationResponse>build();
+                    }
+                    return ResponseEntity.ok(app);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 }

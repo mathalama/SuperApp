@@ -23,28 +23,35 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 @Component
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(OAuth2SuccessHandler.class);
+
     private final UserRepository userRepository;
     private final TokenStore tokenStore;
     private final EventPublisher eventPublisher;
     private final OAuthProviderUseCase oauthProviderUseCase;
     private final FrontendProperties frontendProperties;
     private final OAuthExchangeUseCase oAuthExchangeUseCase;
+    private final PasswordEncoder passwordEncoder;
 
     public OAuth2SuccessHandler(UserRepository userRepository,
                                 TokenStore tokenStore,
                                 EventPublisher eventPublisher,
                                 OAuthProviderUseCase oauthProviderUseCase,
-                                FrontendProperties frontendProperties, OAuthExchangeUseCase oAuthExchangeUseCase) {
+                                FrontendProperties frontendProperties,
+                                OAuthExchangeUseCase oAuthExchangeUseCase,
+                                PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.tokenStore = tokenStore;
         this.eventPublisher = eventPublisher;
         this.oauthProviderUseCase = oauthProviderUseCase;
         this.frontendProperties = frontendProperties;
         this.oAuthExchangeUseCase = oAuthExchangeUseCase;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -116,7 +123,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         newUser.setEmail(email);
         String uniqueIdSuffix = java.util.UUID.randomUUID().toString().substring(0, 8);
         newUser.setUsername(email.split("@")[0] + "_" + uniqueIdSuffix);
-        newUser.setPassword("OAUTH2_NO_PASSWORD");
+        newUser.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
         newUser.setEmailVerified(true);
         newUser.setVerifiedAt(new Date());
         newUser.setAccountState(AccountState.ACTIVE);

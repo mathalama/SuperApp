@@ -27,6 +27,14 @@ public class GlobalExceptionHandler {
                 "error", errorMsg));
     }
 
+    @ExceptionHandler(dev.mathalama.kycservice.domain.exception.DuplicateKycApplicationException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateApplication(dev.mathalama.kycservice.domain.exception.DuplicateKycApplicationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                "timestamp", LocalDateTime.now(),
+                "status", HttpStatus.CONFLICT.value(),
+                "error", ex.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
         log.error("Internal KYC Service Error: ", ex);

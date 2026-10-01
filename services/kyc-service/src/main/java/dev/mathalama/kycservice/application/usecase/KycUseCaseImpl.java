@@ -4,6 +4,7 @@ import dev.mathalama.kycservice.application.dto.request.SubmitKycRequest;
 import dev.mathalama.kycservice.application.dto.response.KycApplicationResponse;
 import dev.mathalama.kycservice.application.mapper.KycMapper;
 import dev.mathalama.kycservice.domain.enums.KycStatus;
+import dev.mathalama.kycservice.domain.exception.DuplicateKycApplicationException;
 import dev.mathalama.kycservice.domain.model.KycApplication;
 import dev.mathalama.kycservice.domain.port.in.KycUseCase;
 import dev.mathalama.kycservice.domain.port.out.KycEventPublisherPort;
@@ -31,7 +32,7 @@ public class KycUseCaseImpl implements KycUseCase {
     private final KycInferencePort inferencePort;
     private final KycEventPublisherPort eventPublisherPort;
 
-    @Value("${ml-service.thresholds.liveness:0.85}")
+    @Value("${ml-service.thresholds.liveness:0.5}")
     private double livenessThreshold;
 
     @Value("${ml-service.thresholds.similarity:0.65}")
@@ -41,6 +42,15 @@ public class KycUseCaseImpl implements KycUseCase {
     @Transactional
     public KycApplicationResponse submitApplication(UUID userId, SubmitKycRequest request) {
         log.info("Processing KYC submission for userId: {}", userId);
+
+        repositoryPort.findTopByUserIdOrderByCreatedAtDesc(userId).ifPresent(existing -> {
+            if (existing.getStatus() == KycStatus.VERIFIED) {
+                throw new DuplicateKycApplicationException("User identity is already verified.");
+            }
+            if (existing.getStatus() == KycStatus.IN_PROGRESS || existing.getStatus() == KycStatus.MANUAL_REVIEW) {
+                throw new DuplicateKycApplicationException("An application is currently being processed.");
+            }
+        });
 
         // 1. Upload original files to private MinIO S3 bucket
         String frontKey = storagePort.uploadDocument(userId, request.getDocumentFront(), "front");

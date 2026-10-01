@@ -16,6 +16,12 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(dev.mathalama.userservice.domain.exception.UserProfileNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleProfileNotFound(dev.mathalama.userservice.domain.exception.UserProfileNotFoundException ex) {
+        log.warn("Profile not found: {}", ex.getMessage());
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<Map<String, Object>> handleMissingHeader(MissingRequestHeaderException ex) {
         log.warn("Missing required header: {}", ex.getHeaderName());
