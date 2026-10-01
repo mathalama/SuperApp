@@ -11,6 +11,7 @@ type Config struct {
 	KafkaTopicUserRegistered   string
 	KafkaTopicVerificationEmail string
 	KafkaTopicPasswordReset    string
+	KafkaTopicKycEvents        string
 	RedisHost                  string
 	RedisPort                  string
 	RedisPassword              string
@@ -30,6 +31,7 @@ func Load() *Config {
 		KafkaTopicUserRegistered:   getEnv("TOPIC_USER_REGISTERED", "user-registered-topic"),
 		KafkaTopicVerificationEmail: getEnv("TOPIC_VERIFICATION_EMAIL", "verification-email-topic"),
 		KafkaTopicPasswordReset:    getEnv("TOPIC_PASSWORD_RESET", "password-reset-email-topic"),
+		KafkaTopicKycEvents:        getEnv("TOPIC_KYC_EVENTS", "kyc.events"),
 		RedisHost:                  getEnvAny([]string{"SPRING_DATA_REDIS_HOST", "REDIS_HOST"}, "redis"),
 		RedisPort:                  getEnvAny([]string{"SPRING_DATA_REDIS_PORT", "REDIS_PORT"}, "6379"),
 		RedisPassword:              getEnv("REDIS_PASSWORD", ""),

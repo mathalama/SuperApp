@@ -24,3 +24,11 @@ type PasswordResetEmailRequestedEvent struct {
 	ResetToken string `json:"resetToken"`
 	Timestamp  int64  `json:"timestamp"`
 }
+
+type KycStatusChangedEvent struct {
+	UserID        string `json:"userId"`
+	ApplicationID string `json:"applicationId"`
+	Status        string `json:"status"`
+	Reason        string `json:"reason"`
+	Timestamp     string `json:"timestamp"`
+}

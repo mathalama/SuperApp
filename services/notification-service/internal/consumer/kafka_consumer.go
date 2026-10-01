@@ -46,6 +46,7 @@ func NewNotificationConsumer(
 		initReader(cfg.KafkaTopicUserRegistered),
 		initReader(cfg.KafkaTopicVerificationEmail),
 		initReader(cfg.KafkaTopicPasswordReset),
+		initReader(cfg.KafkaTopicKycEvents),
 	}
 
 	dltWriter := &kafka.Writer{
@@ -71,6 +72,7 @@ func (c *NotificationConsumer) Start(ctx context.Context) {
 	go c.consumeUserRegistered(ctx, c.readers[0])
 	go c.consumeVerificationEmail(ctx, c.readers[1])
 	go c.consumePasswordReset(ctx, c.readers[2])
+	go c.consumeKycEvents(ctx, c.readers[3])
 }
 
 func (c *NotificationConsumer) Close() error {
@@ -200,6 +202,41 @@ func (c *NotificationConsumer) consumePasswordReset(ctx context.Context, reader 
 		_ = reader.CommitMessages(ctx, m)
 	}
 }
+
+func (c *NotificationConsumer) consumeKycEvents(ctx context.Context, reader *kafka.Reader) {
+	for {
+		m, err := reader.FetchMessage(ctx)
+		if err != nil {
+			if errors.Is(err, context.Canceled) {
+				return
+			}
+			log.Printf("[Consumer Error] Fetch %s: %v", reader.Config().Topic, err)
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		var event dto.KycStatusChangedEvent
+		if err := json.Unmarshal(m.Value, &event); err != nil {
+			log.Printf("[Consumer ERROR] Unmarshal KYC status changed event: %v", err)
+			c.sendToDLT(ctx, m.Topic, m.Key, m.Value, err.Error())
+			_ = reader.CommitMessages(ctx, m)
+			continue
+		}
+
+		eventId := "kyc-" + event.ApplicationID + "-" + event.Status
+		if !c.idemSvc.MarkIfNew(ctx, eventId) {
+			log.Printf("[Idempotency] Duplicate KYC event skipped: %s", eventId)
+			_ = reader.CommitMessages(ctx, m)
+			continue
+		}
+
+		log.Printf("[Consumer] Processing KYC status update: user=%s, app=%s, status=%s, reason=%s",
+			event.UserID, event.ApplicationID, event.Status, event.Reason)
+
+		_ = reader.CommitMessages(ctx, m)
+	}
+}
+
 
 func (c *NotificationConsumer) sendToDLT(ctx context.Context, originalTopic string, key, value []byte, reason string) {
 	dltTopic := originalTopic + ".DLT"
