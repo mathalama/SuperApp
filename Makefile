@@ -13,7 +13,8 @@ RED    := \033[31m
 BOLD   := \033[1m
 RESET  := \033[0m
 
-JAVA_SERVICES := api-gateway identity-service kyc-service notification-service user-service
+JAVA_SERVICES := identity-service kyc-service user-service
+GO_SERVICES   := api-gateway notification-service
 
 .PHONY: help
 help: ## Display this help screen
@@ -110,33 +111,59 @@ web-down: ## Stop KYC Web Frontend container
 	@echo -e "${BLUE}==>${RESET} Stopping KYC Web container..."
 	docker compose -f infra/compose/docker-compose.web.yml down
 
-
 # ==============================================================================
-# JAVA MICROSERVICES (BUILD, TEST, CLEAN)
+# MICROSERVICES (BUILD, TEST, CLEAN - GO & JAVA)
 # ==============================================================================
 
 .PHONY: build
-build: ## Compile and build all Java microservices
+build: build-go build-java ## Compile and build all microservices (Go and Java)
+
+.PHONY: build-java
+build-java: ## Compile and build Java microservices
 	@for svc in $(JAVA_SERVICES); do \
-		echo -e "${BLUE}==>${RESET} Building $$svc..."; \
+		echo -e "${BLUE}==>${RESET} Building Java service $$svc..."; \
 		(cd services/$$svc && (./gradlew classes || ./gradlew.bat classes)) || exit 1; \
 	done
-	@echo -e "${GREEN}✓ All microservices built successfully.${RESET}"
+	@echo -e "${GREEN}✓ All Java microservices built successfully.${RESET}"
+
+.PHONY: build-go
+build-go: ## Compile and build Go microservices
+	@for svc in $(GO_SERVICES); do \
+		echo -e "${BLUE}==>${RESET} Building Go service $$svc..."; \
+		(cd services/$$svc && go build -v -o nul ./cmd/...) || exit 1; \
+	done
+	@echo -e "${GREEN}✓ All Go microservices built successfully.${RESET}"
 
 .PHONY: test
-test: ## Run unit and integration tests across all Java microservices
+test: test-go test-java ## Run tests across all microservices (Go and Java)
+
+.PHONY: test-java
+test-java: ## Run tests across Java microservices
 	@for svc in $(JAVA_SERVICES); do \
-		echo -e "${BLUE}==>${RESET} Testing $$svc..."; \
+		echo -e "${BLUE}==>${RESET} Testing Java service $$svc..."; \
 		(cd services/$$svc && (./gradlew test || ./gradlew.bat test)) || exit 1; \
 	done
-	@echo -e "${GREEN}✓ All microservice tests passed.${RESET}"
+	@echo -e "${GREEN}✓ All Java microservice tests passed.${RESET}"
+
+.PHONY: test-go
+test-go: ## Run tests across Go microservices
+	@for svc in $(GO_SERVICES); do \
+		echo -e "${BLUE}==>${RESET} Testing Go service $$svc..."; \
+		(cd services/$$svc && go test -v ./...) || exit 1; \
+	done
+	@echo -e "${GREEN}✓ All Go microservice tests passed.${RESET}"
 
 .PHONY: clean
 clean: ## Clean build directories, caches, and logs across all services
 	@for svc in $(JAVA_SERVICES); do \
-		echo -e "${YELLOW}==>${RESET} Cleaning $$svc..."; \
+		echo -e "${YELLOW}==>${RESET} Cleaning Java service $$svc..."; \
 		(cd services/$$svc && (./gradlew clean || ./gradlew.bat clean)) 2>/dev/null || true; \
 		rm -rf services/$$svc/.gradle services/$$svc/build services/$$svc/bin; \
+	done
+	@for svc in $(GO_SERVICES); do \
+		echo -e "${YELLOW}==>${RESET} Cleaning Go service $$svc..."; \
+		(cd services/$$svc && go clean -cache) 2>/dev/null || true; \
+		rm -f services/$$svc/*.exe services/$$svc/server; \
 	done
 	@rm -f services/*/*.log services/*/*.iml
 	@echo -e "${GREEN}✓ Clean completed.${RESET}"

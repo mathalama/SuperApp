@@ -19,4 +19,6 @@ USER appuser
 ARG PORT=8080
 EXPOSE ${PORT}
 
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=70.0 -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xss512k"
+
 ENTRYPOINT ["java", "-jar", "app.jar"]

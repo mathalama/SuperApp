@@ -1,15 +1,5 @@
-.gradle
-build
-bin
-out
 .idea
-*.iml
-*.iws
-*.ipr
 .vscode
-.settings
-.classpath
-.project
 *.log
 .git
 .gitattributes
@@ -18,3 +8,7 @@ out
 Dockerfile*
 README.md
 docs
+*.exe
+server
+bin
+out
