@@ -31,6 +31,10 @@ public class KycApplicationResponse {
     private String nationality;
 
     private String rejectionReason;
+    private String userEmail;
+    private String reviewedBy;
+    private String reviewNotes;
+    private LocalDateTime reviewedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

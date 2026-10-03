@@ -8,3 +8,11 @@ type UserRegisteredEvent struct {
 	AuthProvider string `json:"authProvider"`
 	Timestamp    int64  `json:"timestamp"`
 }
+
+type KycStatusChangedEvent struct {
+	UserID        string      `json:"userId"`
+	ApplicationID string      `json:"applicationId"`
+	Status        string      `json:"status"`
+	Reason        string      `json:"reason,omitempty"`
+	Timestamp     interface{} `json:"timestamp,omitempty"`
+}

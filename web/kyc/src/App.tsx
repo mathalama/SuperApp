@@ -99,6 +99,15 @@ export const App: React.FC = () => {
     setStep('document');
   };
 
+  if (step === 'liveness') {
+    return (
+      <LivenessScanner
+        onCapture={handleLivenessCaptured}
+        onBack={() => setStep('document')}
+      />
+    );
+  }
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-base)' }}>
       <Navbar user={user} onLogout={handleLogout} />
@@ -123,7 +132,7 @@ export const App: React.FC = () => {
 
             <div className={`stepper-line ${step !== 'document' ? 'completed' : ''}`} />
 
-            <div className={`stepper-item ${step === 'liveness' || step === 'submitting' ? 'active' : step === 'result' ? 'completed' : ''}`}>
+            <div className={`stepper-item ${step === 'submitting' ? 'active' : step === 'result' ? 'completed' : ''}`}>
               <div className="stepper-circle">
                 {step === 'result' ? <CheckCircle2 size={14} /> : '2'}
               </div>
@@ -154,13 +163,6 @@ export const App: React.FC = () => {
           {step === 'auth' && <AuthScreen onSuccess={handleAuthSuccess} />}
 
           {step === 'document' && <DocumentWizard onComplete={handleDocumentCaptured} />}
-
-          {step === 'liveness' && (
-            <LivenessScanner
-              onCapture={handleLivenessCaptured}
-              onBack={() => setStep('document')}
-            />
-          )}
 
           {/* Staged Neural Processing View */}
           {step === 'submitting' && (

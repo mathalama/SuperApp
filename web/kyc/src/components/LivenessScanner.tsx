@@ -13,11 +13,9 @@ import {
   Maximize2,
   Minimize2,
   X,
-  Lock,
   Volume2,
   VolumeX,
   Zap,
-  Radio
 } from 'lucide-react';
 import './LivenessScanner.css';
 
@@ -34,10 +32,10 @@ interface LivenessScannerProps {
   onBack?: () => void;
 }
 
-const POSE_THRESHOLD = 18; // degrees
+const POSE_THRESHOLD = 18;
 const STABLE_FRAMES_NEEDED = 3;
 
-// Synthesize pleasant futuristic audio cues using Web Audio API
+// Web Audio synthesizer for sleek biometric haptic audio feedback
 class BiometricAudioEngine {
   private ctx: AudioContext | null = null;
   public enabled: boolean = true;
@@ -62,8 +60,8 @@ class BiometricAudioEngine {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, this.ctx.currentTime); // D5
-      osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.12); // A5
+      osc.frequency.setValueAtTime(587.33, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.12);
       gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
       osc.connect(gain);
@@ -81,8 +79,7 @@ class BiometricAudioEngine {
       this.init();
       if (!this.ctx) return;
       const now = this.ctx.currentTime;
-      // Apple-like two-tone positive chime
-      const tones = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6 chord
+      const tones = [523.25, 659.25, 783.99, 1046.5];
       tones.forEach((freq, idx) => {
         const osc = this.ctx!.createOscillator();
         const gain = this.ctx!.createGain();
@@ -112,13 +109,12 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
   const [soundMuted, setSoundMuted] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
-  // Challenge Sequence
+  // Challenge Steps
   const [challengeSteps, setChallengeSteps] = useState<string[]>(['CENTER', 'TURN_LEFT', 'SMILE']);
   const [currentStepIdx, setCurrentStepIdx] = useState<number>(0);
   const [stepHoldProgress, setStepHoldProgress] = useState<number>(0);
   const [isCapturingKeyframe, setIsCapturingKeyframe] = useState<boolean>(false);
   const [showShutterFlash, setShowShutterFlash] = useState<boolean>(false);
-  const [fps] = useState<number>(60);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -128,12 +124,10 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
   const pollTimerRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Sync mute state
   useEffect(() => {
     audioEngine.enabled = !soundMuted;
   }, [soundMuted]);
 
-  // Dynamic challenge fetch
   useEffect(() => {
     async function loadChallenge() {
       try {
@@ -196,7 +190,7 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
       }
     } catch (err: any) {
       console.warn('Camera access failed:', err);
-      setCameraError('Real-time camera access is required for biometric liveness verification. Please allow camera permissions.');
+      setCameraError('Для биометрической проверки необходим доступ к камере в реальном времени. Пожалуйста, разрешите доступ к камере.');
     }
   }, [facingMode, stopCamera]);
 
@@ -214,7 +208,6 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
     }
   }, [captureState, facingMode, startCamera, stopCamera]);
 
-  // Fullscreen toggle
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       containerRef.current?.requestFullscreen?.().catch(() => {});
@@ -233,7 +226,6 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
-  // Frame grabber
   const grabCurrentFrame = (): Blob | null => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -291,11 +283,9 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
               setStepHoldProgress(0);
 
               if (currentStepIdx + 1 < challengeSteps.length) {
-                // Step passed
                 audioEngine.playStepTone();
                 setCurrentStepIdx((prev) => prev + 1);
               } else {
-                // All passed!
                 audioEngine.playSuccessChime();
                 setIsCapturingKeyframe(true);
                 setShowShutterFlash(true);
@@ -309,7 +299,7 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
                   setCaptureState('preview');
                   setIsCapturingKeyframe(false);
                   stopCamera();
-                }, 450);
+                }, 400);
               }
             }
           } else {
@@ -355,36 +345,36 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
       case 'CENTER':
       case 'ALIGN':
         return {
-          title: 'Position your face in the oval',
-          subtitle: 'Keep your head upright and look into the camera',
+          title: 'Поместите лицо в контур',
+          subtitle: 'Держите голову прямо и смотрите в камеру',
           icon: <UserCheck size={26} />,
           theme: 'cyan',
         };
       case 'TURN_LEFT':
         return {
-          title: 'Turn head slowly to your LEFT',
-          subtitle: 'Keep your face visible inside the reticle',
+          title: 'Плавно поверните голову ВЛЕВО',
+          subtitle: 'Удерживайте лицо в поле видимости камеры',
           icon: <ArrowLeft size={26} />,
           theme: 'violet',
         };
       case 'TURN_RIGHT':
         return {
-          title: 'Turn head slowly to your RIGHT',
-          subtitle: 'Keep your face visible inside the reticle',
+          title: 'Плавно поверните голову ВПРАВО',
+          subtitle: 'Удерживайте лицо в поле видимости камеры',
           icon: <ArrowRight size={26} />,
           theme: 'violet',
         };
       case 'SMILE':
         return {
-          title: 'Smile naturally at the camera',
-          subtitle: 'Validating micro-biometrics and dynamic contours',
+          title: 'Естественно улыбнитесь',
+          subtitle: 'Проверка мимических биометрических маркеров',
           icon: <Smile size={26} />,
           theme: 'amber',
         };
       default:
         return {
-          title: 'Look directly into camera',
-          subtitle: 'Follow the on-screen biometric indicators',
+          title: 'Смотрите прямо в камеру',
+          subtitle: 'Следуйте указаниям на экране',
           icon: <Zap size={26} />,
           theme: 'cyan',
         };
@@ -396,62 +386,51 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
   const isPoseBalanced = pose && Math.abs(pose.yaw) <= POSE_THRESHOLD && Math.abs(pose.pitch) <= POSE_THRESHOLD;
 
   return (
-    <div ref={containerRef} className="fullscreen-biometric-portal">
-      {/* Background Live Camera Feed (Full-bleed edge-to-edge, zero cropping) */}
-      <div className="fullscreen-camera-layer">
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          autoPlay
-          className={`fullscreen-video ${facingMode === 'user' ? 'mirrored' : ''}`}
-        />
-        {/* Subtle cinematic grain + vignette layer */}
-        <div className="biometric-cinematic-vignette" />
-      </div>
+    <div ref={containerRef} className="fullscreen-live-camera-root">
+      {/* 100% Fullscreen Uncut Live Camera Video */}
+      <video
+        ref={videoRef}
+        playsInline
+        muted
+        autoPlay
+        className={`fullbleed-live-video ${facingMode === 'user' ? 'mirrored' : ''}`}
+      />
 
-      {/* Shutter Flash Effect */}
-      {showShutterFlash && <div className="biometric-shutter-flash" />}
+      {/* Shutter Flash Animation on Keyframe Capture */}
+      {showShutterFlash && <div className="fullscreen-shutter-flash" />}
 
-      {/* ====================================================================
-          TOP FLOATING HUD
-          ==================================================================== */}
-      <header className="biometric-top-hud">
-        <div className="top-hud-left">
+      {/* TOP FLOATING MINIMAL HUD */}
+      <header className="fullscreen-top-bar">
+        <div className="top-bar-left">
           {onBack && (
             <button
               type="button"
               onClick={onBack}
-              className="hud-glass-button"
-              aria-label="Exit verification"
-              title="Exit verification"
+              className="glass-pill-btn"
+              title="Выйти"
             >
               <X size={18} />
-              <span className="hud-button-label">Cancel</span>
+              <span className="btn-text">Закрыть</span>
             </button>
           )}
 
-          <div className="hud-live-pill">
-            <span className="hud-live-dot" />
-            <span className="hud-live-text">LIVE STREAM</span>
-            <span className="hud-fps-divider">•</span>
-            <span className="hud-fps-text">{fps} FPS</span>
+          <div className="live-stream-badge">
+            <span className="live-red-beacon" />
+            <span className="live-label">LIVE КАМЕРА</span>
           </div>
         </div>
 
-        <div className="top-hud-center">
-          <div className="hud-security-shield">
-            <ShieldCheck size={14} className="hud-shield-icon" />
-            <span>ISO/IEC 30107-3 PAD</span>
+        <div className="top-bar-right">
+          <div className="security-pill">
+            <ShieldCheck size={14} className="shield-green" />
+            <span>ISO 30107-3 PAD</span>
           </div>
-        </div>
 
-        <div className="top-hud-right">
           <button
             type="button"
             onClick={() => setSoundMuted(!soundMuted)}
-            className="hud-glass-button hud-icon-only"
-            title={soundMuted ? 'Unmute Sound' : 'Mute Sound'}
+            className="glass-pill-btn icon-only"
+            title={soundMuted ? 'Включить звук' : 'Выключить звук'}
           >
             {soundMuted ? <VolumeX size={17} /> : <Volume2 size={17} />}
           </button>
@@ -463,8 +442,8 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
               setFacingMode(next);
               startCamera(next);
             }}
-            className="hud-glass-button hud-icon-only"
-            title="Switch Camera"
+            className="glass-pill-btn icon-only"
+            title="Переключить камеру"
           >
             <SwitchCamera size={17} />
           </button>
@@ -472,34 +451,32 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="hud-glass-button hud-icon-only"
-            title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+            className="glass-pill-btn icon-only"
+            title={isFullscreen ? 'Выйти из полноэкранного режима' : 'На весь экран'}
           >
             {isFullscreen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
           </button>
         </div>
       </header>
 
-      {/* Camera Access Error Alert */}
+      {/* Camera Error Alert */}
       {cameraError && (
-        <div className="biometric-camera-error-modal">
-          <div className="error-modal-card">
-            <div className="error-modal-icon">
-              <AlertCircle size={28} />
-            </div>
-            <h3>Camera Access Required</h3>
+        <div className="fullscreen-camera-error-backdrop">
+          <div className="error-card-glass">
+            <AlertCircle size={36} color="#ef4444" />
+            <h3>Доступ к камере заблокирован</h3>
             <p>{cameraError}</p>
-            <div className="error-modal-actions">
+            <div className="error-card-actions">
               <button
                 type="button"
                 onClick={() => startCamera(facingMode)}
-                className="hud-btn-primary"
+                className="btn-accent-emerald"
               >
-                <Camera size={16} /> Enable Camera
+                <Camera size={16} /> Повторить попытку
               </button>
               {onBack && (
-                <button type="button" onClick={onBack} className="hud-btn-secondary">
-                  Go Back
+                <button type="button" onClick={onBack} className="btn-subtle-glass">
+                  Назад
                 </button>
               )}
             </div>
@@ -507,210 +484,177 @@ export const LivenessScanner: React.FC<LivenessScannerProps> = ({ onCapture, onB
         </div>
       )}
 
-      {/* ====================================================================
-          BIOMETRIC RETICLE (APPLE FACE ID OVAL + CYBER HUD)
-          ==================================================================== */}
+      {/* CENTER: PURE FACE RETICLE (NO DARK MASKS, JUST THE FACE CONTOUR) */}
       {captureState === 'challenge' && (
-        <div className="biometric-center-stage">
-          <div className={`biometric-face-reticle theme-${instruction.theme} ${isCapturingKeyframe ? 'verified-lock' : ''}`}>
+        <div className="fullscreen-center-reticle-area">
+          <div className={`face-biometric-target theme-${instruction.theme} ${isCapturingKeyframe ? 'verified-lock' : ''}`}>
 
-            {/* SVG Mask cutting out the face oval cleanly */}
-            <svg className="reticle-svg" viewBox="0 0 400 500" preserveAspectRatio="none">
-              <defs>
-                <mask id="biometricHoleMask">
-                  <rect width="400" height="500" fill="white" />
-                  <ellipse cx="200" cy="240" rx="130" ry="180" fill="black" />
-                </mask>
-
-                <linearGradient id="laserBeamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="transparent" />
-                  <stop offset="50%" stopColor="rgba(0, 242, 254, 0.7)" />
-                  <stop offset="100%" stopColor="transparent" />
-                </linearGradient>
-
-                <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#00f2fe" />
-                  <stop offset="50%" stopColor="#4facfe" />
-                  <stop offset="100%" stopColor="#00f2fe" />
-                </linearGradient>
-              </defs>
-
-              {/* Darkened backdrop with smooth oval hole */}
-              <rect
-                width="400"
-                height="500"
-                className="reticle-dark-mask"
-                mask="url(#biometricHoleMask)"
+            {/* SVG Face Contour Outline (Anatomical Human Head & Biometric Target) */}
+            <svg
+              className="face-silhouette-svg"
+              viewBox="0 0 320 420"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              {/* Outer Head Contour Guide */}
+              <path
+                className="head-contour-path"
+                d="M 160,30
+                   C 230,30 280,80 280,160
+                   C 280,240 260,310 210,360
+                   C 185,385 160,390 160,390
+                   C 160,390 135,385 110,360
+                   C 60,310 40,240 40,160
+                   C 40,80 90,30 160,30 Z"
               />
 
-              {/* Base Glowing Oval Track */}
-              <ellipse
-                cx="200"
-                cy="240"
-                rx="130"
-                ry="180"
-                className="reticle-oval-base"
-              />
-
-              {/* Animated Progress Ring filling clockwise */}
-              <ellipse
-                cx="200"
-                cy="240"
-                rx="130"
-                ry="180"
-                className="reticle-oval-progress"
+              {/* Dynamic Progress Ring Over Contour */}
+              <path
+                className="head-progress-path"
+                d="M 160,30
+                   C 230,30 280,80 280,160
+                   C 280,240 260,310 210,360
+                   C 185,385 160,390 160,390
+                   C 160,390 135,385 110,360
+                   C 60,310 40,240 40,160
+                   C 40,80 90,30 160,30 Z"
                 style={{
-                  strokeDasharray: '974',
-                  strokeDashoffset: `${974 - (974 * ((currentStepIdx + stepHoldProgress / 100) / totalSteps))}`,
+                  strokeDasharray: '960',
+                  strokeDashoffset: `${960 - (960 * ((currentStepIdx + stepHoldProgress / 100) / totalSteps))}`,
                 }}
               />
+
+              {/* Eye Alignment Level Tick Marks */}
+              <line x1="28" y1="160" x2="62" y2="160" className="alignment-tick" />
+              <line x1="258" y1="160" x2="292" y2="160" className="alignment-tick" />
+
+              {/* Forehead & Chin Level Marks */}
+              <line x1="160" y1="18" x2="160" y2="34" className="alignment-tick" />
+              <line x1="160" y1="386" x2="160" y2="402" className="alignment-tick" />
             </svg>
 
-            {/* Glowing Laser Scan Bar */}
-            <div className="biometric-laser-scanner" />
+            {/* Glowing Biometric Laser Bar */}
+            <div className="reticle-laser-line" />
 
-            {/* Futuristic Corner Targeting Reticles */}
-            <div className="reticle-corner corner-tl" />
-            <div className="reticle-corner corner-tr" />
-            <div className="reticle-corner corner-bl" />
-            <div className="reticle-corner corner-br" />
+            {/* Corner Focus Brackets */}
+            <div className="corner-bracket corner-top-left" />
+            <div className="corner-bracket corner-top-right" />
+            <div className="corner-bracket corner-bottom-left" />
+            <div className="corner-bracket corner-bottom-right" />
 
-            {/* Outer Rotating Cyber Rings */}
-            <div className="reticle-orbit-ring" />
-            <div className="reticle-orbit-dots" />
-
-            {/* Verified Lock Badge */}
+            {/* Success Lock Stamp */}
             {isCapturingKeyframe && (
-              <div className="biometric-verified-burst">
-                <div className="burst-circle">
-                  <Check size={44} />
+              <div className="biometric-locked-stamp">
+                <div className="stamp-icon-circle">
+                  <Check size={48} />
                 </div>
-                <div className="burst-text">BIOMETRIC SIGNATURE VERIFIED</div>
+                <span className="stamp-text">ЛИЦО УСПЕШНО ПОДТВЕРЖДЕНО</span>
               </div>
             )}
           </div>
 
-          {/* Floating Telemetry Chips HUD */}
-          <div className="telemetry-chip-cluster">
+          {/* Telemetry Floating Chips */}
+          <div className="floating-telemetry-row">
             {pose ? (
               <>
-                <div className={`hud-chip ${Math.abs(pose.yaw) <= POSE_THRESHOLD ? 'hud-chip-ok' : 'hud-chip-active'}`}>
-                  <span className="chip-key">YAW</span>
-                  <span className="chip-val">{Math.round(pose.yaw)}°</span>
-                </div>
-                <div className={`hud-chip ${Math.abs(pose.pitch) <= POSE_THRESHOLD ? 'hud-chip-ok' : 'hud-chip-active'}`}>
-                  <span className="chip-key">PITCH</span>
-                  <span className="chip-val">{Math.round(pose.pitch)}°</span>
-                </div>
-                <div className={`hud-chip ${isPoseBalanced ? 'hud-chip-ok' : 'hud-chip-idle'}`}>
-                  <span className="chip-key">ALIGN</span>
-                  <span className="chip-val">{isPoseBalanced ? 'OPTIMAL' : 'ADJUSTING'}</span>
-                </div>
+                <span className={`telemetry-pill ${Math.abs(pose.yaw) <= POSE_THRESHOLD ? 'ok' : 'active'}`}>
+                  YAW {Math.round(pose.yaw)}°
+                </span>
+                <span className={`telemetry-pill ${Math.abs(pose.pitch) <= POSE_THRESHOLD ? 'ok' : 'active'}`}>
+                  PITCH {Math.round(pose.pitch)}°
+                </span>
+                <span className={`telemetry-pill ${isPoseBalanced ? 'ok' : 'idle'}`}>
+                  {isPoseBalanced ? 'ПОЛОЖЕНИЕ: ИДЕАЛЬНО' : 'ВЫРАВНИВАНИЕ...'}
+                </span>
               </>
             ) : (
-              <div className="hud-chip hud-chip-idle">
-                <Radio size={12} className="pulse-icon" />
-                <span className="chip-val">ACQUIRING BIOMETRIC SENSORS...</span>
-              </div>
+              <span className="telemetry-pill idle">ПОИСК ЛИЦА...</span>
             )}
           </div>
         </div>
       )}
 
-      {/* ====================================================================
-          PREVIEW STATE (FULLSCREEN REVIEW OF CAPTURED BIOMETRIC PHOTO)
-          ==================================================================== */}
+      {/* PREVIEW STATE (CAPTURED FRAME) */}
       {captureState === 'preview' && previewUrl && (
-        <div className="biometric-preview-stage fade-in">
-          <div className="preview-oval-wrapper">
-            <img src={previewUrl} alt="Captured Biometric Frame" className="preview-oval-img" />
-            <div className="preview-verified-halo">
-              <div className="preview-verified-icon">
-                <Check size={28} />
-              </div>
+        <div className="fullscreen-preview-overlay fade-in">
+          <div className="preview-photo-frame">
+            <img src={previewUrl} alt="Захваченный снимок биометрии" className="preview-frame-image" />
+            <div className="preview-badge-emerald">
+              <Check size={24} />
             </div>
           </div>
 
-          <div className="preview-meta-card">
-            <div className="preview-meta-header">
-              <Lock size={16} className="text-emerald" />
-              <span>Biometric Keyframe Authenticated</span>
-            </div>
-            <p className="preview-meta-text">
-              Real-time 3D liveness validated against ISO/IEC 30107-3 anti-spoof standards. Ready for cryptographic verification.
+          <div className="preview-glass-sheet">
+            <h2 className="preview-sheet-title">Биометрический снимок зафиксирован</h2>
+            <p className="preview-sheet-subtitle">
+              Живость лица подтверждена стандартами защиты от спуфинга (ISO/IEC 30107-3).
             </p>
-
-            <div className="preview-actions-row">
+            <div className="preview-sheet-actions">
               <button
                 type="button"
                 onClick={handleRetake}
-                className="hud-btn-secondary"
+                className="btn-subtle-glass"
               >
-                <RotateCcw size={16} /> Retake Scan
+                <RotateCcw size={16} /> Пересдать
               </button>
               <button
                 type="button"
                 onClick={handleConfirm}
-                className="hud-btn-primary"
+                className="btn-accent-emerald"
               >
-                <Check size={18} /> Confirm & Submit Biometrics
+                <Check size={18} /> Подтвердить и отправить
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ====================================================================
-          BOTTOM DYNAMIC ISLAND / GUIDANCE HUD (APPLE-STYLE)
-          ==================================================================== */}
+      {/* BOTTOM FLOATING GUIDANCE DYNAMIC ISLAND */}
       {captureState === 'challenge' && (
-        <footer className="biometric-bottom-hud">
-          {/* Step Progression Pills */}
-          <div className="hud-step-tracker">
+        <footer className="fullscreen-bottom-dock">
+          {/* Step Sequence Dots */}
+          <div className="dock-steps-bar">
             {challengeSteps.map((stepName, idx) => {
               const isPast = idx < currentStepIdx;
               const isCurrent = idx === currentStepIdx;
               return (
                 <div
                   key={stepName}
-                  className={`hud-step-pip ${isPast ? 'step-passed' : ''} ${isCurrent ? 'step-current' : ''}`}
+                  className={`dock-step-item ${isPast ? 'done' : ''} ${isCurrent ? 'active' : ''}`}
                 >
-                  <div className="pip-indicator">
+                  <div className="step-circle">
                     {isPast ? <Check size={11} /> : idx + 1}
                   </div>
-                  <span className="pip-title">
-                    {stepName.replace('_', ' ')}
-                  </span>
+                  <span className="step-label">{stepName}</span>
                 </div>
               );
             })}
           </div>
 
-          {/* Large Guidance Card */}
-          <div className="hud-guidance-pill">
-            <div className={`guidance-icon-circle theme-${instruction.theme}`}>
+          {/* Large Guidance Capsule */}
+          <div className="dock-instruction-capsule">
+            <div className={`instruction-icon-badge theme-${instruction.theme}`}>
               {instruction.icon}
             </div>
-            <div className="guidance-copy">
-              <h2 className="guidance-main-title">{instruction.title}</h2>
-              <p className="guidance-sub-title">{instruction.subtitle}</p>
+            <div className="instruction-texts">
+              <div className="instruction-heading">{instruction.title}</div>
+              <div className="instruction-subheading">{instruction.subtitle}</div>
             </div>
 
-            {/* Circular Hold Progress Gauge */}
+            {/* Circular Hold Gauge */}
             {stepHoldProgress > 0 && (
-              <div className="guidance-gauge-wrap" title={`Hold pose: ${stepHoldProgress}%`}>
-                <svg className="guidance-gauge-svg" viewBox="0 0 36 36">
+              <div className="step-hold-meter">
+                <svg viewBox="0 0 36 36" className="meter-svg">
                   <path
-                    className="gauge-bg"
+                    className="meter-track"
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                   />
                   <path
-                    className="gauge-val"
+                    className="meter-fill"
                     strokeDasharray={`${stepHoldProgress}, 100`}
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                   />
                 </svg>
-                <span className="gauge-text">{stepHoldProgress}%</span>
+                <span className="meter-digit">{stepHoldProgress}%</span>
               </div>
             )}
           </div>

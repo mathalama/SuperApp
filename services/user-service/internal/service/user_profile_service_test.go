@@ -37,6 +37,33 @@ func (m *mockRepo) Save(ctx context.Context, profile *domain.UserProfile) (*doma
 	return profile, nil
 }
 
+func (m *mockRepo) UpdateKycStatus(ctx context.Context, id uuid.UUID, kycStatus domain.KycStatus) error {
+	p, ok := m.profiles[id]
+	if !ok {
+		return repository.ErrNotFound
+	}
+	p.KycStatus = kycStatus
+	return nil
+}
+
+func (m *mockRepo) FindByUsername(ctx context.Context, username string) (*domain.UserProfile, error) {
+	for _, p := range m.profiles {
+		if p.Username == username {
+			return p, nil
+		}
+	}
+	return nil, repository.ErrNotFound
+}
+
+func (m *mockRepo) FindByEmail(ctx context.Context, email string) (*domain.UserProfile, error) {
+	for _, p := range m.profiles {
+		if p.Email == email {
+			return p, nil
+		}
+	}
+	return nil, repository.ErrNotFound
+}
+
 type mockAvatarStorage struct {
 	deletedURLs []string
 	uploadedURL string
@@ -144,5 +171,29 @@ func TestUserProfileService_DeleteAvatar(t *testing.T) {
 	}
 	if len(avatarMock.deletedURLs) != 1 || avatarMock.deletedURLs[0] != oldAvatar {
 		t.Errorf("expected S3 avatar to be deleted")
+	}
+}
+
+func TestUserProfileService_UpdateKycStatus(t *testing.T) {
+	repo := newMockRepo()
+	avatarMock := &mockAvatarStorage{}
+	svc := NewUserProfileService(repo, avatarMock)
+
+	userId := uuid.New()
+	existing := domain.NewUserProfile(userId, "dan", "dan@example.com")
+	repo.profiles[userId] = existing
+
+	updated, err := svc.UpdateKycStatus(context.Background(), userId, "VERIFIED")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if updated.KycStatus != domain.KycStatusVerified {
+		t.Errorf("expected KycStatus to be VERIFIED, got %s", updated.KycStatus)
+	}
+
+	_, err = svc.UpdateKycStatus(context.Background(), userId, "INVALID_STATUS")
+	if err == nil {
+		t.Errorf("expected error for invalid kyc status")
 	}
 }

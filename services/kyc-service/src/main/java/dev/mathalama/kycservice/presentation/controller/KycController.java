@@ -22,9 +22,10 @@ public class KycController {
     @PostMapping(value = "/verify", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<KycApplicationResponse> submitKyc(
             @RequestHeader("X-User-Id") String userId,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmail,
             @Valid @ModelAttribute SubmitKycRequest request) {
 
-        KycApplicationResponse response = kycUseCase.submitApplication(UUID.fromString(userId), request);
+        KycApplicationResponse response = kycUseCase.submitApplication(UUID.fromString(userId), userEmail, request);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 

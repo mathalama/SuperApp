@@ -27,6 +27,10 @@ public final class KycMapper {
                 .expiryDate(app.getExtractedExpiryDate())
                 .nationality(app.getExtractedNationality())
                 .rejectionReason(app.getRejectionReason())
+                .userEmail(app.getUserEmail())
+                .reviewedBy(app.getReviewedBy())
+                .reviewNotes(app.getReviewNotes())
+                .reviewedAt(app.getReviewedAt())
                 .createdAt(app.getCreatedAt())
                 .updatedAt(app.getUpdatedAt())
                 .build();

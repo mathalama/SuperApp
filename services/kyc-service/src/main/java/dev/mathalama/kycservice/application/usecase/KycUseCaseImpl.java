@@ -1,5 +1,6 @@
 package dev.mathalama.kycservice.application.usecase;
 
+import dev.mathalama.kycservice.application.dto.request.AdminReviewRequest;
 import dev.mathalama.kycservice.application.dto.request.SubmitKycRequest;
 import dev.mathalama.kycservice.application.dto.response.KycApplicationResponse;
 import dev.mathalama.kycservice.application.mapper.KycMapper;
@@ -7,6 +8,7 @@ import dev.mathalama.kycservice.domain.enums.KycStatus;
 import dev.mathalama.kycservice.domain.exception.DuplicateKycApplicationException;
 import dev.mathalama.kycservice.domain.model.KycApplication;
 import dev.mathalama.kycservice.domain.port.in.KycUseCase;
+import dev.mathalama.kycservice.domain.port.out.AmlScreeningPort;
 import dev.mathalama.kycservice.domain.port.out.KycEventPublisherPort;
 import dev.mathalama.kycservice.domain.port.out.KycInferencePort;
 import dev.mathalama.kycservice.domain.port.out.KycRepositoryPort;
@@ -15,10 +17,13 @@ import dev.mathalama.kycservice.infrastructure.client.dto.MlInferenceResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,6 +36,7 @@ public class KycUseCaseImpl implements KycUseCase {
     private final KycStoragePort storagePort;
     private final KycInferencePort inferencePort;
     private final KycEventPublisherPort eventPublisherPort;
+    private final AmlScreeningPort amlScreeningPort;
 
     @Value("${ml-service.thresholds.liveness:0.5}")
     private double livenessThreshold;
@@ -40,8 +46,8 @@ public class KycUseCaseImpl implements KycUseCase {
 
     @Override
     @Transactional
-    public KycApplicationResponse submitApplication(UUID userId, SubmitKycRequest request) {
-        log.info("Processing KYC submission for userId: {}", userId);
+    public KycApplicationResponse submitApplication(UUID userId, String userEmail, SubmitKycRequest request) {
+        log.info("Processing KYC submission for userId: {}, email: {}", userId, userEmail);
 
         repositoryPort.findTopByUserIdOrderByCreatedAtDesc(userId).ifPresent(existing -> {
             if (existing.getStatus() == KycStatus.VERIFIED) {
@@ -62,6 +68,7 @@ public class KycUseCaseImpl implements KycUseCase {
         // 2. Create application draft with IN_PROGRESS status
         KycApplication application = KycApplication.builder()
                 .userId(userId)
+                .userEmail(userEmail)
                 .documentType(request.getDocumentType())
                 .status(KycStatus.IN_PROGRESS)
                 .documentFrontKey(frontKey)
@@ -70,7 +77,7 @@ public class KycUseCaseImpl implements KycUseCase {
                 .build();
 
         application = repositoryPort.save(application);
-        eventPublisherPort.publishKycStatusChanged(userId, application.getId(), KycStatus.IN_PROGRESS, null);
+        eventPublisherPort.publishKycStatusChanged(userId, application.getId(), userEmail, KycStatus.IN_PROGRESS, null);
 
         // 3. Call ML inference service (OCR + Liveness + Face Match)
         try {
@@ -80,6 +87,21 @@ public class KycUseCaseImpl implements KycUseCase {
 
             MlInferenceResponse mlResult = inferencePort.processKyc(frontBytes, selfieBytes, backBytes);
             enrichAndEvaluateApplication(application, mlResult);
+
+            // 4. Automated Sanctions & AML Watchlist Screening
+            if (application.getStatus() == KycStatus.VERIFIED) {
+                var aml = amlScreeningPort.screen(
+                        application.getExtractedFirstName(),
+                        application.getExtractedLastName(),
+                        application.getExtractedNationality(),
+                        application.getExtractedDocumentNumber()
+                );
+                if (aml.isFlagged()) {
+                    log.warn("User {} flagged during automated AML screening: {}", userId, aml.getMatchDetails());
+                    application.setStatus(KycStatus.MANUAL_REVIEW);
+                    application.setRejectionReason("[AML/Sanctions Alert] " + aml.getMatchDetails());
+                }
+            }
 
         } catch (IOException e) {
             log.error("Failed to read uploaded files for userId: {}", userId, e);
@@ -93,7 +115,7 @@ public class KycUseCaseImpl implements KycUseCase {
         }
 
         application = repositoryPort.save(application);
-        eventPublisherPort.publishKycStatusChanged(userId, application.getId(), application.getStatus(),
+        eventPublisherPort.publishKycStatusChanged(userId, application.getId(), userEmail, application.getStatus(),
                 application.getRejectionReason());
 
         return KycMapper.toResponse(application);
@@ -237,5 +259,53 @@ public class KycUseCaseImpl implements KycUseCase {
     public Optional<KycApplicationResponse> getApplicationById(UUID applicationId) {
         return repositoryPort.findById(applicationId)
                 .map(KycMapper::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<KycApplicationResponse> getAllApplications(KycStatus status, Pageable pageable) {
+        Page<KycApplication> page = (status != null)
+                ? repositoryPort.findByStatus(status, pageable)
+                : repositoryPort.findAll(pageable);
+        return page.map(KycMapper::toResponse);
+    }
+
+    @Override
+    @Transactional
+    public KycApplicationResponse reviewApplication(UUID applicationId, String adminUser, AdminReviewRequest request) {
+        KycApplication app = repositoryPort.findById(applicationId)
+                .orElseThrow(() -> new IllegalArgumentException("KYC application not found with ID: " + applicationId));
+
+        KycStatus decision = request.getDecision();
+        if (decision != KycStatus.VERIFIED && decision != KycStatus.REJECTED) {
+            throw new IllegalArgumentException("Invalid review decision: must be VERIFIED or REJECTED");
+        }
+
+        app.setStatus(decision);
+        app.setReviewedBy(adminUser);
+        app.setReviewNotes(request.getNotes());
+        app.setReviewedAt(LocalDateTime.now());
+
+        if (decision == KycStatus.REJECTED) {
+            String reason = request.getNotes() != null && !request.getNotes().isBlank()
+                    ? request.getNotes()
+                    : "Application rejected during manual compliance review";
+            app.setRejectionReason(reason);
+        } else {
+            app.setRejectionReason(null);
+        }
+
+        app = repositoryPort.save(app);
+        log.info("Admin {} set decision {} on KYC application {}", adminUser, decision, applicationId);
+
+        eventPublisherPort.publishKycStatusChanged(
+                app.getUserId(),
+                app.getId(),
+                app.getUserEmail(),
+                app.getStatus(),
+                app.getRejectionReason()
+        );
+
+        return KycMapper.toResponse(app);
     }
 }

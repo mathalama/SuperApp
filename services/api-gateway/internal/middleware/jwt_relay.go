@@ -40,8 +40,10 @@ var publicPrefixes = []string{
 }
 
 type CustomClaims struct {
-	Type  string      `json:"type"`
-	Roles interface{} `json:"roles"`
+	Type     string      `json:"type"`
+	Roles    interface{} `json:"roles"`
+	Email    string      `json:"email"`
+	Username string      `json:"username"`
 	jwt.RegisteredClaims
 }
 
@@ -66,6 +68,8 @@ func (m *JwtRelayMiddleware) Handler(next http.Handler) http.Handler {
 			// Strip any user spoofing headers from untrusted clients
 			r.Header.Del("X-User-Id")
 			r.Header.Del("X-User-Roles")
+			r.Header.Del("X-User-Email")
+			r.Header.Del("X-User-Name")
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -122,6 +126,12 @@ func (m *JwtRelayMiddleware) Handler(next http.Handler) http.Handler {
 		// 7. Inject trusted headers downstream
 		r.Header.Set("X-User-Id", userId)
 		r.Header.Set("X-User-Roles", rolesHeader)
+		if claims.Email != "" {
+			r.Header.Set("X-User-Email", claims.Email)
+		}
+		if claims.Username != "" {
+			r.Header.Set("X-User-Name", claims.Username)
+		}
 
 		next.ServeHTTP(w, r)
 	})

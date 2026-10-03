@@ -19,6 +19,7 @@ type NotificationConsumer struct {
 	cfg         *config.Config
 	emailSvc    *service.EmailService
 	idemSvc     *service.IdempotencyService
+	sseHub      *service.SSEHub
 	readers     []*kafka.Reader
 	dltWriter   *kafka.Writer
 }
@@ -27,6 +28,7 @@ func NewNotificationConsumer(
 	cfg *config.Config,
 	emailSvc *service.EmailService,
 	idemSvc *service.IdempotencyService,
+	sseHub *service.SSEHub,
 ) *NotificationConsumer {
 	brokers := strings.Split(cfg.KafkaBootstrapServers, ",")
 
@@ -230,8 +232,20 @@ func (c *NotificationConsumer) consumeKycEvents(ctx context.Context, reader *kaf
 			continue
 		}
 
-		log.Printf("[Consumer] Processing KYC status update: user=%s, app=%s, status=%s, reason=%s",
-			event.UserID, event.ApplicationID, event.Status, event.Reason)
+		log.Printf("[Consumer] Processing KYC status update: user=%s, email=%s, app=%s, status=%s, reason=%s",
+			event.UserID, event.Email, event.ApplicationID, event.Status, event.Reason)
+
+		if c.sseHub != nil && event.UserID != "" {
+			c.sseHub.BroadcastToUser(event.UserID, "KYC_STATUS_CHANGED", event)
+		}
+
+		if event.Email != "" && (event.Status == "VERIFIED" || event.Status == "REJECTED" || event.Status == "MANUAL_REVIEW") {
+			if err := c.emailSvc.SendKycStatusEmail(event.Email, event.Status, event.Reason); err != nil {
+				log.Printf("[Consumer ERROR] Failed sending KYC status email to %s: %v", event.Email, err)
+			} else {
+				log.Printf("[Consumer] KYC status email successfully sent to %s (status: %s)", event.Email, event.Status)
+			}
+		}
 
 		_ = reader.CommitMessages(ctx, m)
 	}

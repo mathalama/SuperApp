@@ -28,6 +28,7 @@ type PasswordResetEmailRequestedEvent struct {
 type KycStatusChangedEvent struct {
 	UserID        string `json:"userId"`
 	ApplicationID string `json:"applicationId"`
+	Email         string `json:"email"`
 	Status        string `json:"status"`
 	Reason        string `json:"reason"`
 	Timestamp     string `json:"timestamp"`

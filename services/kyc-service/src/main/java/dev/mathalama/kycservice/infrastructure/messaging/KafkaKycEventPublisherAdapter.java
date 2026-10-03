@@ -21,17 +21,18 @@ public class KafkaKycEventPublisherAdapter implements KycEventPublisherPort {
     private static final String TOPIC_KYC_EVENTS = "kyc.events";
 
     @Override
-    public void publishKycStatusChanged(UUID userId, UUID applicationId, KycStatus status, String reason) {
+    public void publishKycStatusChanged(UUID userId, UUID applicationId, String email, KycStatus status, String reason) {
         KycStatusChangedEvent event = KycStatusChangedEvent.builder()
                 .userId(userId)
                 .applicationId(applicationId)
+                .email(email)
                 .status(status.name())
                 .reason(reason)
                 .timestamp(LocalDateTime.now())
                 .build();
 
-        log.info("Publishing KYC status event to Kafka topic {}: userId={}, status={}", TOPIC_KYC_EVENTS, userId,
-                status);
+        log.info("Publishing KYC status event to Kafka topic {}: userId={}, email={}, status={}", TOPIC_KYC_EVENTS, userId,
+                email, status);
         kafkaTemplate.send(TOPIC_KYC_EVENTS, userId.toString(), event);
     }
 
@@ -40,6 +41,7 @@ public class KafkaKycEventPublisherAdapter implements KycEventPublisherPort {
     public static class KycStatusChangedEvent {
         private UUID userId;
         private UUID applicationId;
+        private String email;
         private String status;
         private String reason;
         private LocalDateTime timestamp;

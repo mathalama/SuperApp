@@ -18,6 +18,7 @@ type Config struct {
 	KafkaBootstrapServers    string
 	KafkaGroupID             string
 	KafkaTopicUserRegistered string
+	KafkaTopicKycEvents      string
 }
 
 func Load() *Config {
@@ -34,6 +35,7 @@ func Load() *Config {
 	kafkaServers := getEnvAny([]string{"KAFKA_BOOTSTRAP_SERVERS", "SPRING_KAFKA_BOOTSTRAP_SERVERS"}, "localhost:9092")
 	kafkaGroup := getEnvAny([]string{"KAFKA_GROUP_ID", "APP_KAFKA_CONSUMER_USER_GROUP"}, "user-service-group")
 	kafkaTopic := getEnvAny([]string{"KAFKA_TOPIC_USER_REGISTERED", "APP_KAFKA_TOPICS_USER_REGISTERED"}, "user-registered-topic")
+	kafkaTopicKyc := getEnvAny([]string{"KAFKA_TOPIC_KYC_EVENTS", "TOPIC_KYC_EVENTS"}, "kyc.events")
 
 	// Database Connection String
 	pgURL := buildPostgresURL()
@@ -49,6 +51,7 @@ func Load() *Config {
 		KafkaBootstrapServers:    kafkaServers,
 		KafkaGroupID:             kafkaGroup,
 		KafkaTopicUserRegistered: kafkaTopic,
+		KafkaTopicKycEvents:      kafkaTopicKyc,
 	}
 }
 

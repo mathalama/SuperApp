@@ -47,6 +47,20 @@ func (s *EmailService) SendPasswordResetEmail(toEmail, username, resetToken stri
 	return s.sendMail(toEmail, "Password Reset Request", html, "Identity Service")
 }
 
+func (s *EmailService) SendKycStatusEmail(toEmail, status, reason string) error {
+	log.Printf("[EmailService] Sending KYC status email to %s (status: %s)", toEmail, status)
+	portalURL := s.cfg.FrontendURL
+	if portalURL == "" {
+		portalURL = "http://localhost:3000"
+	}
+	html, err := templates.RenderKycStatus(status, reason, portalURL)
+	if err != nil {
+		return err
+	}
+	subject := fmt.Sprintf("Identity Verification Status: %s", status)
+	return s.sendMail(toEmail, subject, html, "SuperApp Compliance")
+}
+
 func (s *EmailService) sendMail(to, subject, htmlBody, fromName string) error {
 	addr := net.JoinHostPort(s.cfg.MailHost, s.cfg.MailPort)
 	from := s.cfg.MailUsername

@@ -62,6 +62,8 @@ public class RedisTokenStore implements TokenStore {
                 : List.of("ROLE_USER");
 
         claims.put("roles", rolesList);
+        claims.put("email", user.getEmail());
+        claims.put("username", user.getUsername());
         claims.put("type", "access");
         if (sessionId != null) {
             claims.put("sid", sessionId);

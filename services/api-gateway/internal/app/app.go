@@ -116,6 +116,8 @@ func New(cfg *config.Config) (*App, error) {
 
 	r.Handle("/api/users/*", userProxy)
 	r.Handle("/api/users", userProxy)
+	r.Handle("/api/wallets/*", userProxy)
+	r.Handle("/api/wallets", userProxy)
 	r.Handle("/user/v3/api-docs/*", userDocsProxy)
 	r.Handle("/user/v3/api-docs", userDocsProxy)
 

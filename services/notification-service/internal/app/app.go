@@ -50,9 +50,10 @@ func New(cfg *config.Config) (*App, error) {
 	// 2. Initialize Services
 	idemSvc := service.NewIdempotencyService(rdb)
 	emailSvc := service.NewEmailService(cfg)
-	notifConsumer := consumer.NewNotificationConsumer(cfg, emailSvc, idemSvc)
+	sseHub := service.NewSSEHub()
+	notifConsumer := consumer.NewNotificationConsumer(cfg, emailSvc, idemSvc, sseHub)
 
-	// 3. Initialize Chi Router for Health Checks
+	// 3. Initialize Chi Router
 	r := chi.NewRouter()
 	r.Use(chimiddleware.RequestID)
 	r.Use(chimiddleware.RealIP)
@@ -70,12 +71,14 @@ func New(cfg *config.Config) (*App, error) {
 	}
 	r.Get("/actuator/health", healthHandler)
 	r.Get("/health", healthHandler)
+	r.Get("/api/notifications/health", healthHandler)
+	r.Get("/api/notifications/stream", sseHub.ServeHTTP)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
 		Handler:      r,
 		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		WriteTimeout: 0, // 0 enables indefinite SSE streaming without timeout cutoff
 		IdleTimeout:  60 * time.Second,
 	}
 

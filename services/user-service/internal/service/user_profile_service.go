@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 
@@ -111,4 +112,16 @@ func (s *UserProfileService) DeleteAvatar(ctx context.Context, userID uuid.UUID)
 	}
 
 	return profile, nil
+}
+
+func (s *UserProfileService) UpdateKycStatus(ctx context.Context, userID uuid.UUID, kycStatus string) (*domain.UserProfile, error) {
+	status := domain.KycStatus(kycStatus)
+	if !status.IsValid() {
+		return nil, fmt.Errorf("invalid KYC status: %s", kycStatus)
+	}
+	if err := s.repo.UpdateKycStatus(ctx, userID, status); err != nil {
+		return nil, err
+	}
+	log.Printf("[UserProfileService] Updated KYC status for userId=%s to %s", userID, kycStatus)
+	return s.repo.FindByID(ctx, userID)
 }

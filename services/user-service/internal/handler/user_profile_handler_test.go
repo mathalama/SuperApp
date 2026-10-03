@@ -39,6 +39,33 @@ func (m *handlerMockRepo) Save(ctx context.Context, profile *domain.UserProfile)
 	return profile, nil
 }
 
+func (m *handlerMockRepo) UpdateKycStatus(ctx context.Context, id uuid.UUID, kycStatus domain.KycStatus) error {
+	p, ok := m.profiles[id]
+	if !ok {
+		return repository.ErrNotFound
+	}
+	p.KycStatus = kycStatus
+	return nil
+}
+
+func (m *handlerMockRepo) FindByUsername(ctx context.Context, username string) (*domain.UserProfile, error) {
+	for _, p := range m.profiles {
+		if p.Username == username {
+			return p, nil
+		}
+	}
+	return nil, repository.ErrNotFound
+}
+
+func (m *handlerMockRepo) FindByEmail(ctx context.Context, email string) (*domain.UserProfile, error) {
+	for _, p := range m.profiles {
+		if p.Email == email {
+			return p, nil
+		}
+	}
+	return nil, repository.ErrNotFound
+}
+
 type handlerMockAvatarStorage struct{}
 
 func (m *handlerMockAvatarStorage) UploadAvatar(ctx context.Context, userID uuid.UUID, r io.Reader, size int64) (string, error) {

@@ -92,6 +92,11 @@ func NewApp(cfg *config.Config) (*App, error) {
 
 	h.RegisterRoutes(r)
 
+	walletRepo := repository.NewPostgresWalletRepository(db)
+	walletSvc := service.NewWalletService(walletRepo, repo)
+	walletHandler := handler.NewWalletHandler(walletSvc)
+	walletHandler.RegisterRoutes(r)
+
 	// 5. Setup Kafka Consumer
 	userConsumer := consumer.NewUserEventConsumer(cfg, svc)
 
